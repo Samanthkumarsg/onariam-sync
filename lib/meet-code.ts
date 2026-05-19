@@ -1,0 +1,35 @@
+/** Google Meet–style codes: abc-defg-hijk (3-4-3 lowercase letters) */
+
+const MEET_CODE_RE = /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/;
+
+export function formatMeetCode(raw: string): string {
+  const letters = raw.toLowerCase().replace(/[^a-z]/g, "");
+  if (letters.length !== 10) {
+    return raw.toLowerCase().trim();
+  }
+  return `${letters.slice(0, 3)}-${letters.slice(3, 7)}-${letters.slice(7, 10)}`;
+}
+
+export function normalizeMeetCodeInput(input: string): string {
+  const letters = input.toLowerCase().replace(/[^a-z]/g, "").slice(0, 10);
+  if (letters.length <= 3) return letters;
+  if (letters.length <= 7) {
+    return `${letters.slice(0, 3)}-${letters.slice(3)}`;
+  }
+  return `${letters.slice(0, 3)}-${letters.slice(3, 7)}-${letters.slice(7)}`;
+}
+
+export function isValidMeetCode(code: string): boolean {
+  return MEET_CODE_RE.test(formatMeetCode(code));
+}
+
+export function meetPath(code: string): string {
+  return `/meet/${formatMeetCode(code)}`;
+}
+
+export function meetShareUrl(code: string): string {
+  if (typeof window === "undefined") {
+    return meetPath(code);
+  }
+  return `${window.location.origin}${meetPath(code)}`;
+}

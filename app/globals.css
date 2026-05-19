@@ -1,26 +1,105 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
+/*
+ * Linear design tokens (DESIGN.md + getdesign linear.app)
+ * Colors are defined as hex in @theme so Tailwind generates utilities.
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  --color-background: #010102;
+  --color-foreground: #f7f8f8;
+  --color-card: #0f1011;
+  --color-card-foreground: #f7f8f8;
+  --color-popover: #0f1011;
+  --color-popover-foreground: #f7f8f8;
+  --color-primary: #5e6ad2;
+  --color-primary-hover: #828fff;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #141516;
+  --color-secondary-foreground: #f7f8f8;
+  --color-muted: #141516;
+  --color-muted-foreground: #8a8f98;
+  --color-ink-muted: #d0d6e0;
+  --color-accent: #18191a;
+  --color-accent-foreground: #f7f8f8;
+  --color-surface-elevated: #141516;
+  --color-destructive: #e5484d;
+  --color-border: #23252a;
+  --color-input: #141516;
+  --color-ring: #5e6ad2;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Shadcn semantic aliases (used by bg-background, text-foreground, etc.) */
+:root,
+.dark {
+  --background: #010102;
+  --foreground: #f7f8f8;
+  --card: #0f1011;
+  --card-foreground: #f7f8f8;
+  --popover: #0f1011;
+  --popover-foreground: #f7f8f8;
+  --primary: #5e6ad2;
+  --primary-hover: #828fff;
+  --primary-foreground: #ffffff;
+  --secondary: #141516;
+  --secondary-foreground: #f7f8f8;
+  --muted: #141516;
+  --muted-foreground: #8a8f98;
+  --ink-muted: #d0d6e0;
+  --accent: #18191a;
+  --accent-foreground: #f7f8f8;
+  --surface-elevated: #141516;
+  --destructive: #e5484d;
+  --border: #23252a;
+  --input: #141516;
+  --ring: #5e6ad2;
+  --radius: 8px;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  html {
+    @apply font-sans antialiased;
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground text-base leading-normal;
+    font-feature-settings: "cv01", "cv02", "ss01";
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, #5e6ad2 35%, transparent);
+    color: #f7f8f8;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-semibold tracking-tight text-foreground;
+  }
+
+  code {
+    @apply font-mono text-[13px];
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-muted-foreground;
+  }
 }
