@@ -1,5 +1,15 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Cursor plugins
+
+This repo uses the [Vercel plugin](https://github.com/vercel/vercel-plugin) for Next.js deploy skills and agent context in Cursor.
+
+```bash
+npm run cursor:plugins
+```
+
+Restart Cursor after installing. You can also use `/vercel-plugin:deploy` and other slash commands from the plugin.
+
 ## Getting Started
 
 First, run the development server:
