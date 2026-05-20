@@ -16,7 +16,7 @@ import {
   type RoomSession,
 } from "@/lib/room-session";
 
-export default function MeetPage() {
+export default function SyncPage() {
   const params = useParams<{ code: string }>();
   const router = useRouter();
   const code = formatMeetCode(params.code ?? "");

@@ -13,7 +13,8 @@ import type { AvatarId } from "@/lib/avatars";
 import { isValidMeetCode, meetPath, normalizeMeetCodeInput } from "@/lib/meet-code";
 import { createMeeting, joinMeeting, type MeetingMembership } from "@/lib/meetings";
 import { saveRoomSession } from "@/lib/room-session";
-import { divider, eyebrow, headline, input, label, panel, subhead } from "@/lib/ui";
+import { OnariamLogo } from "@/components/onariam-logo";
+import { divider, input, label, panel, subhead } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 export function RoomLobby() {
@@ -90,11 +91,10 @@ export function RoomLobby() {
   return (
     <main className="flex min-h-screen items-center justify-center p-4 md:p-8">
       <div className="w-full max-w-[420px] space-y-8">
-        <header className="space-y-2 text-center">
-          <p className={eyebrow}>Co-browse</p>
-          <h1 className={headline}>Onariam Sync</h1>
+        <header className="flex flex-col items-center gap-3 text-center">
+          <OnariamLogo href={null} />
           <p className={subhead}>
-            Google Meet–style link. Host shares a page; everyone follows in sync.
+            Host shares a page; everyone follows in sync.
           </p>
         </header>
 

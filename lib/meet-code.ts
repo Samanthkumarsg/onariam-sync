@@ -1,4 +1,4 @@
-/** Google Meet–style codes: abc-defg-hijk (3-4-3 lowercase letters) */
+/** Sync session codes: abc-defg-hijk (3-4-3 lowercase letters) */
 
 const MEET_CODE_RE = /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/;
 
@@ -24,7 +24,7 @@ export function isValidMeetCode(code: string): boolean {
 }
 
 export function meetPath(code: string): string {
-  return `/meet/${formatMeetCode(code)}`;
+  return `/sync/${formatMeetCode(code)}`;
 }
 
 export function meetShareUrl(code: string): string {

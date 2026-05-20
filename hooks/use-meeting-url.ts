@@ -1,6 +1,7 @@
 import { REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { normalizeBrowseUrl } from "@/lib/browse-proxy";
 import { createClient } from "@/lib/client";
 import { getMeetingState, setMeetingUrl } from "@/lib/meetings";
 
@@ -48,10 +49,16 @@ export function useMeetingUrl({
   const navigateAsHost = useCallback(
     async (raw: string) => {
       if (!isHost) return;
+      const normalized = normalizeBrowseUrl(raw);
+      if (!normalized) return;
       setSaving(true);
       setError(null);
       try {
-        const { target_url } = await setMeetingUrl(roomName, deviceFingerprint, raw);
+        const { target_url } = await setMeetingUrl(
+          roomName,
+          deviceFingerprint,
+          normalized
+        );
         applyUrl(target_url);
         broadcastUrl(target_url);
       } catch (e) {

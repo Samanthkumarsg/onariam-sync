@@ -79,40 +79,39 @@ export const useRealtimeCursors = ({
 }) => {
   const [color] = useState(() => hashStringToColor(userId))
   const [cursors, setCursors] = useState<Record<string, CursorEventPayload>>({})
+  const [localCursor, setLocalCursor] = useState<CursorEventPayload | null>(null)
   const cursorPayload = useRef<CursorEventPayload | null>(null)
 
   const channelRef = useRef<RealtimeChannel | null>(null)
 
-  const callback = useCallback(
-    (event: MouseEvent) => {
-      const { clientX, clientY } = event
-
+  const pushPosition = useCallback(
+    (clientX: number, clientY: number) => {
       const payload: CursorEventPayload = {
-        position: {
-          x: clientX,
-          y: clientY,
-        },
-        user: {
-          id: userId,
-          name: username,
-        },
+        position: { x: clientX, y: clientY },
+        user: { id: userId, name: username },
         avatar,
-        color: color,
-        timestamp: new Date().getTime(),
+        color,
+        timestamp: Date.now(),
       }
 
       cursorPayload.current = payload
+      setLocalCursor(payload)
 
       channelRef.current?.send({
         type: 'broadcast',
         event: EVENT_NAME,
-        payload: payload,
+        payload,
       })
     },
     [avatar, color, userId, username]
   )
 
-  const handleMouseMove = useThrottleCallback(callback, throttleMs)
+  const reportPosition = useThrottleCallback(pushPosition, throttleMs)
+
+  const handleMouseMove = useCallback(
+    (event: MouseEvent) => reportPosition(event.clientX, event.clientY),
+    [reportPosition]
+  )
 
   useEffect(() => {
     const channel = supabase.channel(roomName)
@@ -145,16 +144,10 @@ export const useRealtimeCursors = ({
         // Don't render your own cursor
         if (user.id === userId) return
 
-        setCursors((prev) => {
-          if (prev[userId]) {
-            delete prev[userId]
-          }
-
-          return {
-            ...prev,
-            [user.id]: data.payload,
-          }
-        })
+        setCursors((prev) => ({
+          ...prev,
+          [user.id]: data.payload,
+        }))
       })
       .subscribe(async (status) => {
         if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
@@ -182,5 +175,5 @@ export const useRealtimeCursors = ({
     }
   }, [handleMouseMove])
 
-  return { cursors }
+  return { cursors, localCursor, color, reportPosition }
 }
