@@ -2,9 +2,11 @@ import { cn } from "@/lib/utils";
 
 /** Linear design primitives — see DESIGN.md */
 
-export const eyebrow = "text-[13px] font-medium uppercase tracking-[0.04em] text-muted-foreground";
+export const eyebrow =
+  "text-[13px] font-medium uppercase tracking-[0.04em] text-muted-foreground";
 
-export const headline = "text-[28px] font-semibold leading-tight tracking-[-0.02em] text-foreground";
+export const headline =
+  "text-[28px] font-semibold leading-tight tracking-[-0.02em] text-foreground";
 
 export const subhead = "text-sm leading-normal text-ink-muted";
 
@@ -13,6 +15,11 @@ export const label = "text-sm text-muted-foreground";
 export const panel = cn(
   "rounded-lg border border-border bg-card p-6",
   "shadow-none ring-1 ring-inset ring-white/[0.04]"
+);
+
+export const popover = cn(
+  "rounded-lg border border-border bg-card shadow-lg",
+  "ring-1 ring-inset ring-white/[0.04]"
 );
 
 export const input = cn(

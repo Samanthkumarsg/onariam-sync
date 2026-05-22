@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { MeetingShell } from "@/components/meeting-shell";
+import { ClipboardSyncShell } from "@/components/clipboard-sync-shell";
 import { useDeviceId } from "@/hooks/use-device-id";
 import { AVATARS, type AvatarId } from "@/lib/avatars";
 import { formatMeetCode } from "@/lib/meet-code";
@@ -54,7 +54,6 @@ export default function SyncPage() {
           deviceFingerprint: m.device_fingerprint,
           avatarId,
           isHost: m.is_host,
-          targetUrl: m.target_url,
         };
         saveRoomSession(next);
         if (!cancelled) setSession(next);
@@ -91,7 +90,7 @@ export default function SyncPage() {
   }
 
   return (
-    <MeetingShell
+    <ClipboardSyncShell
       session={session}
       onLeave={() => {
         clearRoomSession();

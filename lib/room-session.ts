@@ -7,7 +7,6 @@ export type RoomSession = {
   deviceFingerprint: string;
   avatarId: AvatarId;
   isHost?: boolean;
-  targetUrl?: string | null;
 };
 
 const STORAGE_KEY = "onariam-room-session";
@@ -38,7 +37,6 @@ export function getRoomSession(): RoomSession | null {
       deviceFingerprint: parsed.deviceFingerprint,
       avatarId: parsed.avatarId ?? "fox",
       isHost: parsed.isHost,
-      targetUrl: parsed.targetUrl,
     };
   } catch {
     return null;

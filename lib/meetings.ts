@@ -17,6 +17,8 @@ export type MeetingState = {
   target_url: string | null;
   url_updated_at: string | null;
   is_host: boolean;
+  notes: string;
+  notes_updated_at: string | null;
 };
 
 function firstRow<T>(data: unknown): T {
@@ -106,4 +108,25 @@ export async function getMeetingState(topic: string, deviceFingerprint: string) 
   }
 
   return firstRow<MeetingState>(data);
+}
+
+export async function updateMeetingNotes(
+  topic: string,
+  deviceFingerprint: string,
+  notes: string
+) {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("update_meeting_notes", {
+    p_topic: formatMeetCode(topic),
+    p_device_fingerprint: deviceFingerprint,
+    p_notes: notes,
+  });
+
+  if (error) {
+    throw new Error(formatError(error));
+  }
+
+  return firstRow<{ topic: string; notes: string; notes_updated_at: string }>(
+    data
+  );
 }

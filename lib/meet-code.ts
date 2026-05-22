@@ -33,3 +33,15 @@ export function meetShareUrl(code: string): string {
   }
   return `${window.location.origin}${meetPath(code)}`;
 }
+
+/** Mobile sender page — scan this from the desktop QR */
+export function sendPath(code: string): string {
+  return `/send/${formatMeetCode(code)}`;
+}
+
+export function sendShareUrl(code: string): string {
+  if (typeof window === "undefined") {
+    return sendPath(code);
+  }
+  return `${window.location.origin}${sendPath(code)}`;
+}

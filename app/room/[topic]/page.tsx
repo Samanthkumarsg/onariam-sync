@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { isValidMeetCode, meetPath } from "@/lib/meet-code";
 
 import { RealtimeCursors } from "@/components/realtime-cursors";
-import { RoomMembersPanel } from "@/components/room-members-panel";
+import { ParticipantsMenu } from "@/components/participants-menu";
 import { Button } from "@/components/ui/button";
 import { useDeviceId } from "@/hooks/use-device-id";
 import { AVATARS, getAvatarEmoji, type AvatarId } from "@/lib/avatars";
@@ -132,6 +132,11 @@ export default function RoomPage() {
         >
           {copied ? "Copied" : "Copy"}
         </button>
+        <ParticipantsMenu
+          topic={session.topic}
+          deviceFingerprint={session.deviceFingerprint}
+          currentDeviceFingerprint={session.deviceFingerprint}
+        />
         <span className="text-muted-foreground/40">·</span>
         <span className="text-sm text-ink-muted">{session.displayName}</span>
         <Button
@@ -146,12 +151,6 @@ export default function RoomPage() {
           Leave
         </Button>
       </header>
-
-      <RoomMembersPanel
-        topic={session.topic}
-        deviceFingerprint={session.deviceFingerprint}
-        currentDeviceFingerprint={session.deviceFingerprint}
-      />
     </div>
   );
 }
