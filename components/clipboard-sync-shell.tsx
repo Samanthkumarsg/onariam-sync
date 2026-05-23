@@ -1,33 +1,34 @@
 "use client";
 
-import {
-  Check,
-  Clipboard,
-  ClipboardCheck,
-  Copy,
-} from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Clipboard, ClipboardCheck } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { ClipboardCompose } from "@/components/clipboard-compose";
+import { ClipboardInboxItemCard } from "@/components/clipboard-inbox-item";
 import { LeaveSessionDialog } from "@/components/leave-session-dialog";
 import { SessionToolbar } from "@/components/session-toolbar";
-import { Button } from "@/components/ui/button";
 import { useClipboardP2p } from "@/hooks/use-clipboard-p2p";
+import { useRoomMembers } from "@/hooks/use-room-members";
+import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
 import type { ClipboardPayload } from "@/lib/clipboard-p2p";
+import {
+  clearClipboardInbox,
+  loadClipboardInbox,
+  saveClipboardInbox,
+  upsertClipboardItem,
+  type ClipboardInboxItem,
+} from "@/lib/clipboard-inbox-storage";
 import { meetShareUrl, sendShareUrl } from "@/lib/meet-code";
 import type { RoomSession } from "@/lib/room-session";
 import { eyebrow, panel, subhead } from "@/lib/ui";
 import { cn } from "@/lib/utils";
-
-type ReceivedItem = ClipboardPayload & {
-  copiedToClipboard: boolean;
-};
 
 type Props = {
   session: RoomSession;
   onLeave: () => void;
 };
 
-function downloadClipboardItems(items: ReceivedItem[], topic: string) {
+function downloadClipboardItems(items: ClipboardInboxItem[], topic: string) {
   const body = items
     .map(
       (item) => `[${new Date(item.at).toLocaleString()}]\n${item.text}`
@@ -42,13 +43,21 @@ function downloadClipboardItems(items: ReceivedItem[], topic: string) {
   URL.revokeObjectURL(url);
 }
 
+function toInboxItem(
+  payload: ClipboardPayload,
+  copiedToClipboard = false
+): ClipboardInboxItem {
+  return { ...payload, copiedToClipboard };
+}
+
 export function ClipboardSyncShell({ session, onLeave }: Props) {
   const sendUrl = useMemo(
     () => sendShareUrl(session.topic),
     [session.topic]
   );
 
-  const [items, setItems] = useState<ReceivedItem[]>([]);
+  const [items, setItems] = useState<ClipboardInboxItem[]>([]);
+  const [hydrated, setHydrated] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [autoCopiedId, setAutoCopiedId] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -57,12 +66,55 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
   const [showQr, setShowQr] = useState(true);
   const [autoCopy, setAutoCopy] = useState(true);
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
+
+  const { members } = useRoomMembers(
+    session.topic,
+    session.deviceFingerprint,
+    session.deviceFingerprint,
+    Boolean(session.isHost)
+  );
+
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
 
   const p2p = useClipboardP2p({
     code: session.topic,
     role: "desktop",
     localId: session.deviceFingerprint,
   });
+
+  const persistItems = useCallback(
+    (next: ClipboardInboxItem[]) => {
+      setItems(next);
+      saveClipboardInbox(session.topic, next);
+    },
+    [session.topic]
+  );
+
+  const addItem = useCallback(
+    (incoming: ClipboardInboxItem) => {
+      persistItems(upsertClipboardItem(itemsRef.current, incoming));
+    },
+    [persistItems]
+  );
+
+  const updateAssignee = useCallback(
+    (id: string, assignee: ClipboardAssignee | null) => {
+      persistItems(
+        itemsRef.current.map((row) =>
+          row.id === id ? { ...row, assignee } : row
+        )
+      );
+    },
+    [persistItems]
+  );
+
+  useEffect(() => {
+    const stored = loadClipboardInbox(session.topic);
+    setItems(stored);
+    setHydrated(true);
+  }, [session.topic]);
 
   useEffect(() => {
     if (p2p.status === "connected") {
@@ -84,11 +136,17 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
         }
       }
       p2p.sendAck(payload.id, copiedToClipboard);
-      setItems((prev) =>
-        [{ ...payload, copiedToClipboard }, ...prev].slice(0, 50)
+      addItem(
+        toInboxItem(
+          {
+            ...payload,
+            source: payload.source ?? "mobile",
+          },
+          copiedToClipboard
+        )
       );
     },
-    [autoCopy, p2p]
+    [autoCopy, p2p, addItem]
   );
 
   useEffect(() => {
@@ -97,12 +155,12 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
     });
   }, [p2p, handleReceive]);
 
-  const copyItem = async (item: ReceivedItem) => {
+  const copyItem = async (item: ClipboardInboxItem) => {
     try {
       await navigator.clipboard.writeText(item.text);
       setCopiedId(item.id);
-      setItems((prev) =>
-        prev.map((row) =>
+      persistItems(
+        itemsRef.current.map((row) =>
           row.id === item.id ? { ...row, copiedToClipboard: true } : row
         )
       );
@@ -121,6 +179,11 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
     setLeaveOpen(true);
   };
 
+  const handleEraseLeave = () => {
+    clearClipboardInbox(session.topic);
+    onLeave();
+  };
+
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <LeaveSessionDialog
@@ -130,7 +193,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
           downloadClipboardItems(items, session.topic);
           onLeave();
         }}
-        onErase={() => onLeave()}
+        onErase={handleEraseLeave}
         onCancel={() => setLeaveOpen(false)}
       />
 
@@ -168,7 +231,29 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
         </div>
       )}
 
-      <main className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col px-safe py-4 sm:px-6 sm:py-6 md:py-8">
+      <main className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col gap-4 px-safe py-4 sm:px-6 sm:py-6 md:py-8">
+        <ClipboardCompose
+          isHost={Boolean(session.isHost)}
+          displayName={session.displayName}
+          deviceFingerprint={session.deviceFingerprint}
+          members={members}
+          open={composeOpen}
+          onOpenChange={setComposeOpen}
+          onAdd={addItem}
+          onBroadcast={(item) => {
+            if (p2p.status === "connected") {
+              p2p.sendPayload(item.text, {
+                html: item.html,
+                source: item.source,
+                author: item.author,
+                assignee: item.assignee,
+                id: item.id,
+                at: item.at,
+              });
+            }
+          }}
+        />
+
         <section
           className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4"
           aria-label="Clipboard inbox"
@@ -180,9 +265,11 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
                 Clipboard inbox
               </h1>
               <p className={cn(subhead, "text-xs sm:text-sm")}>
-                {items.length === 0
-                  ? "Received text appears here in real time."
-                  : `${items.length} item${items.length === 1 ? "" : "s"} this session`}
+                {!hydrated
+                  ? "Loading saved items…"
+                  : items.length === 0
+                    ? "Received text appears here and stays after refresh."
+                    : `${items.length} item${items.length === 1 ? "" : "s"} · saved on this device`}
               </p>
             </div>
 
@@ -197,7 +284,11 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
             </label>
           </header>
 
-          {items.length === 0 ? (
+          {!hydrated ? (
+            <div className="flex flex-1 items-center justify-center py-12 text-sm text-muted-foreground">
+              Loading inbox…
+            </div>
+          ) : items.length === 0 ? (
             <div
               className={cn(
                 panel,
@@ -215,7 +306,14 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
                   Nothing here yet
                 </p>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  Tap{" "}
+                  <button
+                    type="button"
+                    onClick={() => setComposeOpen(true)}
+                    className="font-medium text-primary underline-offset-2 touch-manipulation hover:underline"
+                  >
+                    Add to inbox
+                  </button>
+                  , scan{" "}
                   <button
                     type="button"
                     onClick={() => setShowQr(true)}
@@ -223,8 +321,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
                   >
                     QR
                   </button>{" "}
-                  in the header to pair your phone, then send from the mobile
-                  page.
+                  to pair your phone, or send from the mobile page.
                 </p>
               </div>
             </div>
@@ -234,62 +331,17 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
               aria-label="Received clipboard items"
             >
               {items.map((item, index) => (
-                <li
+                <ClipboardInboxItemCard
                   key={item.id}
-                  className={cn(
-                    panel,
-                    "flex flex-col gap-3 p-3.5 transition-shadow sm:p-5",
-                    index === 0 && "border-primary/25 ring-1 ring-primary/15",
-                    autoCopiedId === item.id && "ring-2 ring-emerald-500/40"
-                  )}
-                >
-                  {index === 0 && (
-                    <span className="w-fit rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                      Latest
-                    </span>
-                  )}
-                  <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground sm:text-[15px]">
-                    {item.text}
-                  </p>
-                  <div className="flex flex-col gap-3 border-t border-border/80 pt-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex flex-col gap-1">
-                      <time
-                        className="text-xs tabular-nums text-muted-foreground"
-                        dateTime={new Date(item.at).toISOString()}
-                      >
-                        {new Date(item.at).toLocaleTimeString(undefined, {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
-                      </time>
-                      {item.copiedToClipboard && (
-                        <span className="flex items-center gap-1 text-xs font-medium text-emerald-400">
-                          <ClipboardCheck className="size-3.5 shrink-0" aria-hidden />
-                          In your clipboard
-                        </span>
-                      )}
-                    </div>
-                    <Button
-                      type="button"
-                      variant={copiedId === item.id ? "secondary" : "outline"}
-                      size="sm"
-                      className="h-11 w-full touch-manipulation sm:h-9 sm:min-w-[5.5rem] sm:w-auto"
-                      onClick={() => void copyItem(item)}
-                    >
-                      {copiedId === item.id ? (
-                        <>
-                          <Check className="size-4 shrink-0" aria-hidden />
-                          Copied
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="size-4 shrink-0" aria-hidden />
-                          Copy
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </li>
+                  item={item}
+                  isLatest={index === 0}
+                  highlightCopy={autoCopiedId === item.id}
+                  copying={copiedId === item.id}
+                  members={members}
+                  currentDeviceFingerprint={session.deviceFingerprint}
+                  onAssigneeChange={updateAssignee}
+                  onCopy={() => void copyItem(item)}
+                />
               ))}
             </ul>
           )}

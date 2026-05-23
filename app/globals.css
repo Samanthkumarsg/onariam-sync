@@ -102,6 +102,22 @@
   textarea::placeholder {
     @apply text-muted-foreground;
   }
+
+  .tiptap-editor p.is-editor-empty:first-child::before {
+    color: #8a8f98;
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+
+  .clipboard-rich strong {
+    font-weight: 600;
+  }
+
+  .clipboard-rich em {
+    font-style: italic;
+  }
 }
 
 @layer utilities {
@@ -151,6 +167,26 @@
 
 .animate-lobby-shake {
   animation: lobby-shake 0.45s ease-in-out;
+}
+
+@keyframes compose-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.compose-panel-in {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.compose-panel-in-active {
+  animation: compose-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .animate-lobby-pop {

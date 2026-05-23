@@ -23,6 +23,19 @@ export function isValidMeetCode(code: string): boolean {
   return MEET_CODE_RE.test(formatMeetCode(code));
 }
 
+/** Compact display for narrow headers: abc-…-hijk */
+export function formatCompactMeetCode(code: string): string {
+  const formatted = formatMeetCode(code);
+  const parts = formatted.split("-");
+  if (parts.length === 3 && parts.every((p) => p.length > 0)) {
+    return `${parts[0]}-…-${parts[2]}`;
+  }
+  if (formatted.length > 11) {
+    return `${formatted.slice(0, 4)}…${formatted.slice(-4)}`;
+  }
+  return formatted;
+}
+
 export function meetPath(code: string): string {
   return `/sync/${formatMeetCode(code)}`;
 }

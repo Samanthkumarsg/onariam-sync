@@ -1,13 +1,12 @@
 "use client";
 
-import {
-  Check,
-  ClipboardPaste,
-  Loader2,
-  Send,
-} from "lucide-react";
-import { useCallback, useEffect, useId, useState } from "react";
+import { Check, Loader2, Send } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
+import {
+  ClipboardEditor,
+  type ClipboardEditorValue,
+} from "@/components/clipboard-editor";
 import { OnariamLogo } from "@/components/onariam-logo";
 import { WaitingForHost } from "@/components/waiting-for-host";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,7 @@ import {
   joinMeeting,
   type MemberStatus,
 } from "@/lib/meetings";
-import { input, panel } from "@/lib/ui";
+import { panel } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -32,9 +31,13 @@ export function ClipboardSender({ code }: Props) {
   const formatted = formatMeetCode(code);
   const valid = isValidMeetCode(formatted);
   const { deviceId, ready } = useDeviceId();
-  const textareaId = useId();
 
-  const [text, setText] = useState("");
+  const [draft, setDraft] = useState<ClipboardEditorValue>({
+    html: "",
+    text: "",
+  });
+  const [editorKey, setEditorKey] = useState(0);
+  const [editorSeed, setEditorSeed] = useState("");
   const [sendState, setSendState] = useState<SendState>("idle");
   const [lastMessageId, setLastMessageId] = useState<string | null>(null);
   const [memberStatus, setMemberStatus] = useState<MemberStatus | null>(null);
@@ -105,25 +108,39 @@ export function ClipboardSender({ code }: Props) {
     });
   }, [p2p, lastMessageId]);
 
-  const pasteFromSystem = async () => {
+  const pasteFromSystem = useCallback(async () => {
     try {
       const clip = await navigator.clipboard.readText();
-      if (clip) setText((prev) => (prev ? `${prev}\n${clip}` : clip));
+      if (!clip) return;
+      const html = `<p>${clip
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\n/g, "<br>")}</p>`;
+      setDraft({ text: clip, html });
+      setEditorSeed(html);
+      setEditorKey((k) => k + 1);
     } catch {
       /* permission denied or unsupported */
     }
-  };
+  }, []);
 
   const handleSend = useCallback(() => {
-    const payload = p2p.sendText(text);
+    const payload = p2p.sendPayload(draft.text, {
+      html: draft.html,
+      source: "mobile",
+      author: displayName,
+    });
     if (!payload) return;
     setLastMessageId(payload.id);
     setSendState("sent");
-    setText("");
+    setDraft({ html: "", text: "" });
+    setEditorSeed("");
+    setEditorKey((k) => k + 1);
     setTimeout(() => {
       setSendState((s) => (s === "sent" ? "delivered" : s));
     }, 800);
-  }, [p2p, text]);
+  }, [p2p, draft, displayName]);
 
   if (!valid) {
     return (
@@ -226,38 +243,26 @@ export function ClipboardSender({ code }: Props) {
             "flex min-h-0 flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4"
           )}
         >
-          <label htmlFor={textareaId} className="shrink-0 text-sm font-medium">
-            Paste or type
-          </label>
-          <textarea
-            id={textareaId}
-            className={cn(
-              input,
-              "min-h-[min(12rem,40dvh)] flex-1 resize-none font-sans text-base leading-relaxed sm:min-h-[200px] sm:resize-y"
-            )}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Links, notes, codes…"
-            autoComplete="off"
-            enterKeyHint="send"
-          />
+          <p className="shrink-0 text-sm font-medium">Paste or type</p>
+          <div className="min-h-0 flex-1">
+            <ClipboardEditor
+              key={editorKey}
+              initialContent={editorSeed}
+              placeholder="Links, notes, codes…"
+              minHeightClassName="min-h-[min(12rem,40dvh)] sm:min-h-[200px]"
+              onChange={setDraft}
+              onPasteFromClipboard={() => void pasteFromSystem()}
+              disabled={p2p.status !== "connected" || !ready}
+            />
+          </div>
 
           <div className="sticky bottom-0 -mx-3 shrink-0 border-t border-border bg-card px-3 pb-safe pt-3 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
             <div className="flex flex-col gap-2">
               <Button
                 type="button"
-                variant="outline"
-                className="h-11 w-full touch-manipulation sm:h-10"
-                onClick={() => void pasteFromSystem()}
-              >
-                <ClipboardPaste className="size-4 shrink-0" aria-hidden />
-                Paste from clipboard
-              </Button>
-              <Button
-                type="button"
                 className="h-12 w-full touch-manipulation sm:h-10"
                 disabled={
-                  !text.trim() ||
+                  !draft.text.trim() ||
                   p2p.status !== "connected" ||
                   !ready
                 }

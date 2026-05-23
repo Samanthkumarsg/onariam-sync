@@ -7,6 +7,7 @@ import { ParticipantsMenu } from "@/components/participants-menu";
 import { QrDisplay } from "@/components/qr-display";
 import { Button } from "@/components/ui/button";
 import { useClipboardP2p } from "@/hooks/use-clipboard-p2p";
+import { formatCompactMeetCode } from "@/lib/meet-code";
 import type { RoomSession } from "@/lib/room-session";
 import { cn } from "@/lib/utils";
 
@@ -162,20 +163,23 @@ export function SessionToolbar({
           <div className="flex min-w-0 items-center gap-2">
             <div
               className={cn(
-                "flex h-10 min-h-10 min-w-0 flex-1 items-stretch overflow-hidden rounded-lg border border-border sm:h-9 sm:min-h-9",
+                "flex h-10 min-h-10 max-w-[min(100%,11rem)] shrink items-stretch overflow-hidden rounded-lg border border-border sm:h-9 sm:min-h-9 sm:max-w-[13rem] md:max-w-[15rem]",
                 "bg-card/80 shadow-none ring-1 ring-inset ring-white/[0.04]"
               )}
               role="group"
               aria-label="Session code"
             >
-              <span className="hidden shrink-0 items-center border-r border-border bg-surface-elevated/80 px-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground md:flex">
+              <span className="hidden shrink-0 items-center border-r border-border bg-surface-elevated/80 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground lg:flex lg:px-2.5">
                 Session
               </span>
               <code
-                className="flex min-w-0 flex-1 items-center truncate px-2 font-mono text-xs text-foreground sm:px-2.5 sm:text-[13px]"
+                className="flex min-w-0 items-center truncate px-2 font-mono text-[11px] text-foreground sm:px-2.5 sm:text-xs md:text-[13px]"
                 title={session.topic}
               >
-                {session.topic}
+                <span className="sm:hidden">
+                  {formatCompactMeetCode(session.topic)}
+                </span>
+                <span className="hidden sm:inline">{session.topic}</span>
               </code>
               <button
                 type="button"

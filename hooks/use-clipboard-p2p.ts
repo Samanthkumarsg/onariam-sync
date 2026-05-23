@@ -10,6 +10,7 @@ import {
   clipboardChannelName,
   decodeClipboardWireMessage,
   encodeClipboardAck,
+  createClipboardPayload,
   encodeClipboardPayload,
   type ClipboardAck,
   type ClipboardPeerRole,
@@ -204,25 +205,36 @@ export function useClipboardP2p({
     [ensurePc, localId, postSignal, role]
   );
 
-  const sendText = useCallback((text: string): ClipboardPayload | null => {
-    const trimmed = text.trim();
-    if (!trimmed) return null;
-    const dc = dcRef.current;
-    if (!dc || dc.readyState !== "open") {
-      setError("Not connected yet");
-      return null;
-    }
-    try {
-      const wire = encodeClipboardPayload(trimmed);
-      dc.send(wire);
-      const payload = JSON.parse(wire) as ClipboardPayload;
-      setError(null);
-      return payload;
-    } catch {
-      setError("Could not send");
-      return null;
-    }
-  }, []);
+  const sendPayload = useCallback(
+    (
+      text: string,
+      options?: Parameters<typeof createClipboardPayload>[1]
+    ): ClipboardPayload | null => {
+      const trimmed = text.trim();
+      if (!trimmed) return null;
+      const dc = dcRef.current;
+      if (!dc || dc.readyState !== "open") {
+        setError("Not connected yet");
+        return null;
+      }
+      try {
+        const payload = createClipboardPayload(trimmed, options);
+        dc.send(JSON.stringify(payload));
+        setError(null);
+        return payload;
+      } catch {
+        setError("Could not send");
+        return null;
+      }
+    },
+    []
+  );
+
+  const sendText = useCallback(
+    (text: string, options?: Parameters<typeof createClipboardPayload>[1]) =>
+      sendPayload(text, options),
+    [sendPayload]
+  );
 
   const sendAck = useCallback((id: string, copied: boolean) => {
     const dc = dcRef.current;
@@ -288,5 +300,5 @@ export function useClipboardP2p({
     teardown,
   ]);
 
-  return { status, error, sendText, sendAck, onReceive, onAck };
+  return { status, error, sendText, sendPayload, sendAck, onReceive, onAck };
 }

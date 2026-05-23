@@ -16,11 +16,23 @@ export type ClipboardSignalMessage = {
   candidate?: RTCIceCandidateInit;
 };
 
+export type ClipboardPayloadSource = "mobile" | "desktop" | "host";
+
+export type ClipboardPayloadAssignee = {
+  deviceFingerprint: string;
+  displayName: string;
+  avatar: string;
+};
+
 export type ClipboardPayload = {
   type: "text";
   text: string;
+  html?: string;
   at: number;
   id: string;
+  source?: ClipboardPayloadSource;
+  author?: string;
+  assignee?: ClipboardPayloadAssignee | null;
 };
 
 export type ClipboardAck = {
@@ -36,14 +48,34 @@ export function clipboardChannelName(code: string): string {
   return `clipboard:${code}`;
 }
 
-export function encodeClipboardPayload(text: string): string {
-  const payload: ClipboardPayload = {
+export function createClipboardPayload(
+  text: string,
+  options?: {
+    html?: string;
+    source?: ClipboardPayloadSource;
+    author?: string;
+    assignee?: ClipboardPayloadAssignee | null;
+    id?: string;
+    at?: number;
+  }
+): ClipboardPayload {
+  return {
     type: "text",
     text,
-    at: Date.now(),
-    id: crypto.randomUUID(),
+    html: options?.html,
+    at: options?.at ?? Date.now(),
+    id: options?.id ?? crypto.randomUUID(),
+    source: options?.source,
+    author: options?.author,
+    assignee: options?.assignee,
   };
-  return JSON.stringify(payload);
+}
+
+export function encodeClipboardPayload(
+  text: string,
+  options?: Parameters<typeof createClipboardPayload>[1]
+): string {
+  return JSON.stringify(createClipboardPayload(text, options));
 }
 
 export function encodeClipboardAck(id: string, copied: boolean): string {
@@ -73,8 +105,32 @@ export function decodeClipboardWireMessage(
       return {
         type: "text",
         text: parsed.text,
+        html: typeof parsed.html === "string" ? parsed.html : undefined,
         at: typeof parsed.at === "number" ? parsed.at : Date.now(),
         id: typeof parsed.id === "string" ? parsed.id : crypto.randomUUID(),
+        source:
+          parsed.source === "mobile" ||
+          parsed.source === "desktop" ||
+          parsed.source === "host"
+            ? parsed.source
+            : undefined,
+        author: typeof parsed.author === "string" ? parsed.author : undefined,
+        assignee:
+          parsed.assignee &&
+          typeof parsed.assignee === "object" &&
+          typeof parsed.assignee.deviceFingerprint === "string"
+            ? {
+                deviceFingerprint: parsed.assignee.deviceFingerprint,
+                displayName:
+                  typeof parsed.assignee.displayName === "string"
+                    ? parsed.assignee.displayName
+                    : "Guest",
+                avatar:
+                  typeof parsed.assignee.avatar === "string"
+                    ? parsed.assignee.avatar
+                    : "🦊",
+              }
+            : undefined,
       };
     }
     return null;
