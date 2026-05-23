@@ -195,6 +195,7 @@ export function RoomLobby() {
         deviceFingerprint: membership.device_fingerprint,
         avatarId: chosenAvatarId,
         isHost: membership.is_host,
+        memberStatus: membership.member_status,
       });
       startTransition(() => {
         router.push(meetPath(membership.topic));
@@ -297,11 +298,12 @@ export function RoomLobby() {
 
     saveRoomSession({
       topic: formatted,
-      title: "Meeting",
+      title: "Session",
       displayName,
       deviceFingerprint: deviceId,
       avatarId,
       isHost: false,
+      memberStatus: "pending",
     });
 
     startTransition(() => {

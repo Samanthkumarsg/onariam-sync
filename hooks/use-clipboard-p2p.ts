@@ -8,8 +8,10 @@ import {
   CLIPBOARD_SIGNAL_EVENT,
   ICE_SERVERS,
   clipboardChannelName,
-  decodeClipboardPayload,
+  decodeClipboardWireMessage,
+  encodeClipboardAck,
   encodeClipboardPayload,
+  type ClipboardAck,
   type ClipboardPeerRole,
   type ClipboardPayload,
   type ClipboardSignalMessage,
@@ -47,6 +49,7 @@ export function useClipboardP2p({
   const onReceiveRef = useRef<((payload: ClipboardPayload) => void) | null>(
     null
   );
+  const onAckRef = useRef<((ack: ClipboardAck) => void) | null>(null);
 
   const teardown = useCallback(() => {
     dcRef.current?.close();
@@ -72,11 +75,11 @@ export function useClipboardP2p({
       setStatus("failed");
     };
     dc.onmessage = (ev) => {
-      const payload =
-        typeof ev.data === "string"
-          ? decodeClipboardPayload(ev.data)
-          : null;
-      if (payload) onReceiveRef.current?.(payload);
+      if (typeof ev.data !== "string") return;
+      const msg = decodeClipboardWireMessage(ev.data);
+      if (!msg) return;
+      if (msg.type === "text") onReceiveRef.current?.(msg);
+      else onAckRef.current?.(msg);
     };
   }, []);
 
@@ -201,26 +204,42 @@ export function useClipboardP2p({
     [ensurePc, localId, postSignal, role]
   );
 
-  const sendText = useCallback((text: string) => {
+  const sendText = useCallback((text: string): ClipboardPayload | null => {
     const trimmed = text.trim();
-    if (!trimmed) return false;
+    if (!trimmed) return null;
     const dc = dcRef.current;
     if (!dc || dc.readyState !== "open") {
       setError("Not connected yet");
-      return false;
+      return null;
     }
     try {
-      dc.send(encodeClipboardPayload(trimmed));
+      const wire = encodeClipboardPayload(trimmed);
+      dc.send(wire);
+      const payload = JSON.parse(wire) as ClipboardPayload;
       setError(null);
-      return true;
+      return payload;
     } catch {
       setError("Could not send");
-      return false;
+      return null;
+    }
+  }, []);
+
+  const sendAck = useCallback((id: string, copied: boolean) => {
+    const dc = dcRef.current;
+    if (!dc || dc.readyState !== "open") return;
+    try {
+      dc.send(encodeClipboardAck(id, copied));
+    } catch {
+      /* ignore */
     }
   }, []);
 
   const onReceive = useCallback((handler: (payload: ClipboardPayload) => void) => {
     onReceiveRef.current = handler;
+  }, []);
+
+  const onAck = useCallback((handler: (ack: ClipboardAck) => void) => {
+    onAckRef.current = handler;
   }, []);
 
   useEffect(() => {
@@ -269,5 +288,5 @@ export function useClipboardP2p({
     teardown,
   ]);
 
-  return { status, error, sendText, onReceive };
+  return { status, error, sendText, sendAck, onReceive, onAck };
 }

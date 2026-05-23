@@ -2,23 +2,25 @@ import { createClient } from "@/lib/client";
 import { getAvatarEmoji } from "@/lib/avatars";
 import { formatMeetCode } from "@/lib/meet-code";
 
+export type MemberStatus = "pending" | "approved" | "rejected";
+
 export type MeetingMembership = {
   topic: string;
   title: string;
   display_name: string;
   device_fingerprint: string;
   avatar: string;
-  target_url: string | null;
   is_host: boolean;
+  member_status: MemberStatus;
 };
 
-export type MeetingState = {
-  topic: string;
-  target_url: string | null;
-  url_updated_at: string | null;
-  is_host: boolean;
-  notes: string;
-  notes_updated_at: string | null;
+export type RoomMember = {
+  display_name: string;
+  device_fingerprint: string;
+  avatar: string;
+  joined_at: string;
+  last_seen_at: string;
+  status: MemberStatus;
 };
 
 function firstRow<T>(data: unknown): T {
@@ -31,22 +33,24 @@ function firstRow<T>(data: unknown): T {
   throw new Error("Unexpected response from server");
 }
 
-function formatError(err: { message?: string; details?: string; hint?: string }) {
+function formatError(err: {
+  message?: string;
+  details?: string;
+  hint?: string;
+}) {
   return [err.message, err.details, err.hint].filter(Boolean).join(" — ");
 }
 
 export async function createMeeting(
   deviceFingerprint: string,
   displayName?: string,
-  avatarId?: string,
-  targetUrl?: string
+  avatarId?: string
 ) {
   const supabase = createClient();
   const { data, error } = await supabase.rpc("create_meeting", {
     p_device_fingerprint: deviceFingerprint,
     p_display_name: displayName?.trim() || null,
     p_avatar: getAvatarEmoji(avatarId ?? "fox"),
-    p_target_url: targetUrl?.trim() || null,
   });
 
   if (error) {
@@ -77,29 +81,13 @@ export async function joinMeeting(
   return firstRow<MeetingMembership>(data);
 }
 
-export async function setMeetingUrl(
-  topic: string,
-  deviceFingerprint: string,
-  targetUrl: string
+export async function getMyMembership(
+  code: string,
+  deviceFingerprint: string
 ) {
   const supabase = createClient();
-  const { data, error } = await supabase.rpc("set_meeting_url", {
-    p_topic: formatMeetCode(topic),
-    p_device_fingerprint: deviceFingerprint,
-    p_target_url: targetUrl,
-  });
-
-  if (error) {
-    throw new Error(formatError(error));
-  }
-
-  return firstRow<{ topic: string; target_url: string }>(data);
-}
-
-export async function getMeetingState(topic: string, deviceFingerprint: string) {
-  const supabase = createClient();
-  const { data, error } = await supabase.rpc("get_meeting_state", {
-    p_topic: formatMeetCode(topic),
+  const { data, error } = await supabase.rpc("get_my_membership", {
+    p_topic: formatMeetCode(code),
     p_device_fingerprint: deviceFingerprint,
   });
 
@@ -107,26 +95,56 @@ export async function getMeetingState(topic: string, deviceFingerprint: string) 
     throw new Error(formatError(error));
   }
 
-  return firstRow<MeetingState>(data);
+  return firstRow<MeetingMembership>(data);
 }
 
-export async function updateMeetingNotes(
+export async function getRoomMembers(
   topic: string,
-  deviceFingerprint: string,
-  notes: string
+  deviceFingerprint: string
 ) {
   const supabase = createClient();
-  const { data, error } = await supabase.rpc("update_meeting_notes", {
+  const { data, error } = await supabase.rpc("get_room_members", {
     p_topic: formatMeetCode(topic),
     p_device_fingerprint: deviceFingerprint,
-    p_notes: notes,
   });
 
   if (error) {
     throw new Error(formatError(error));
   }
 
-  return firstRow<{ topic: string; notes: string; notes_updated_at: string }>(
-    data
-  );
+  return (data ?? []) as RoomMember[];
+}
+
+export async function approveMember(
+  topic: string,
+  hostFingerprint: string,
+  memberFingerprint: string
+) {
+  const supabase = createClient();
+  const { error } = await supabase.rpc("approve_member", {
+    p_topic: formatMeetCode(topic),
+    p_host_fingerprint: hostFingerprint,
+    p_member_fingerprint: memberFingerprint,
+  });
+
+  if (error) {
+    throw new Error(formatError(error));
+  }
+}
+
+export async function rejectMember(
+  topic: string,
+  hostFingerprint: string,
+  memberFingerprint: string
+) {
+  const supabase = createClient();
+  const { error } = await supabase.rpc("reject_member", {
+    p_topic: formatMeetCode(topic),
+    p_host_fingerprint: hostFingerprint,
+    p_member_fingerprint: memberFingerprint,
+  });
+
+  if (error) {
+    throw new Error(formatError(error));
+  }
 }

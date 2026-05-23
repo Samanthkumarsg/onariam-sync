@@ -8,9 +8,16 @@ type Props = {
   size?: "sm" | "md";
   /** Link to home (default true) */
   href?: string | null;
+  /** Mark only — for dense toolbars */
+  compact?: boolean;
 };
 
-export function OnariamLogo({ className, size = "md", href = "/" }: Props) {
+export function OnariamLogo({
+  className,
+  size = "md",
+  href = "/",
+  compact = false,
+}: Props) {
   const mark = (
     <span
       className={cn(
@@ -36,7 +43,7 @@ export function OnariamLogo({ className, size = "md", href = "/" }: Props) {
       </span>
       {size === "md" && (
         <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-          Co-browse
+          Clipboard sync
         </span>
       )}
     </span>
@@ -45,7 +52,7 @@ export function OnariamLogo({ className, size = "md", href = "/" }: Props) {
   const content = (
     <>
       {mark}
-      {wordmark}
+      {!compact && wordmark}
     </>
   );
 
@@ -54,9 +61,15 @@ export function OnariamLogo({ className, size = "md", href = "/" }: Props) {
     className
   );
 
+  const ariaLabel = compact ? "Onariam Sync home" : undefined;
+
   if (href) {
     return (
-      <Link href={href} className={rootClass} aria-label="Onariam Sync home">
+      <Link
+        href={href}
+        className={rootClass}
+        aria-label={ariaLabel ?? "Onariam Sync home"}
+      >
         {content}
       </Link>
     );

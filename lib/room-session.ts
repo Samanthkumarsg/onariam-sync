@@ -1,4 +1,5 @@
 import type { AvatarId } from "@/lib/avatars";
+import type { MemberStatus } from "@/lib/meetings";
 
 export type RoomSession = {
   topic: string;
@@ -7,6 +8,7 @@ export type RoomSession = {
   deviceFingerprint: string;
   avatarId: AvatarId;
   isHost?: boolean;
+  memberStatus?: MemberStatus;
 };
 
 const STORAGE_KEY = "onariam-room-session";
@@ -37,6 +39,7 @@ export function getRoomSession(): RoomSession | null {
       deviceFingerprint: parsed.deviceFingerprint,
       avatarId: parsed.avatarId ?? "fox",
       isHost: parsed.isHost,
+      memberStatus: parsed.memberStatus,
     };
   } catch {
     return null;
