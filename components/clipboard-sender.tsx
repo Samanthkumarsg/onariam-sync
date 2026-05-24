@@ -7,18 +7,22 @@ import {
   ClipboardEditor,
   type ClipboardEditorValue,
 } from "@/components/clipboard-editor";
+import { JoinSessionProfile } from "@/components/join-session-profile";
 import { OnariamLogo } from "@/components/onariam-logo";
 import { WaitingForHost } from "@/components/waiting-for-host";
 import { Button } from "@/components/ui/button";
 import { useClipboardP2p } from "@/hooks/use-clipboard-p2p";
 import { useDeviceId } from "@/hooks/use-device-id";
+import type { AvatarId } from "@/lib/avatars";
 import { formatMeetCode, isValidMeetCode } from "@/lib/meet-code";
+import { needsJoinProfile } from "@/lib/join-profile";
+import { getRoomSession, saveRoomSession } from "@/lib/room-session";
 import {
   getMyMembership,
   joinMeeting,
   type MemberStatus,
 } from "@/lib/meetings";
-import { panel } from "@/lib/ui";
+import { pageShell, panel, stackLayout, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -42,9 +46,17 @@ export function ClipboardSender({ code }: Props) {
   const [lastMessageId, setLastMessageId] = useState<string | null>(null);
   const [memberStatus, setMemberStatus] = useState<MemberStatus | null>(null);
   const [displayName, setDisplayName] = useState("Guest");
+  const [avatarId, setAvatarId] = useState<AvatarId>("fox");
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [profileReady, setProfileReady] = useState(false);
 
   const approved = memberStatus === "approved";
+  const showProfileGate =
+    valid &&
+    ready &&
+    deviceId &&
+    !profileReady &&
+    needsJoinProfile(formatted, getRoomSession());
   const p2p = useClipboardP2p({
     code: formatted,
     role: "mobile",
@@ -54,12 +66,24 @@ export function ClipboardSender({ code }: Props) {
 
   useEffect(() => {
     if (!valid || !ready || !deviceId) return;
+    if (needsJoinProfile(formatted, getRoomSession())) return;
+    setProfileReady(true);
+  }, [formatted, valid, ready, deviceId]);
+
+  useEffect(() => {
+    if (!profileReady || !valid || !ready || !deviceId) return;
 
     let cancelled = false;
 
     (async () => {
       try {
-        const m = await joinMeeting(formatted, deviceId);
+        const stored = getRoomSession();
+        const m = await joinMeeting(
+          formatted,
+          deviceId,
+          stored?.displayName ?? displayName,
+          stored?.avatarId ?? avatarId
+        );
         if (cancelled) return;
         setDisplayName(m.display_name);
         setMemberStatus(m.member_status);
@@ -74,7 +98,7 @@ export function ClipboardSender({ code }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [formatted, valid, ready, deviceId]);
+  }, [formatted, valid, ready, deviceId, profileReady, displayName, avatarId]);
 
   useEffect(() => {
     if (memberStatus !== "pending" || !deviceId) return;
@@ -150,6 +174,34 @@ export function ClipboardSender({ code }: Props) {
     );
   }
 
+  if (showProfileGate) {
+    return (
+      <main className="flex min-h-dvh flex-col items-center justify-center px-safe py-6">
+        <JoinSessionProfile
+          code={formatted}
+          title="Join from phone"
+          subtitle="Your name and icon appear in the session for the host."
+          submitLabel="Continue"
+          onSubmit={({ name, avatarId: picked }) => {
+            if (!deviceId) return;
+            setAvatarId(picked);
+            saveRoomSession({
+              topic: formatted,
+              title: "Session",
+              displayName: name.trim() || `Guest ${deviceId.slice(-4)}`,
+              deviceFingerprint: deviceId,
+              avatarId: picked,
+              isHost: false,
+              memberStatus: "pending",
+            });
+            setDisplayName(name.trim() || `Guest ${deviceId.slice(-4)}`);
+            setProfileReady(true);
+          }}
+        />
+      </main>
+    );
+  }
+
   if (joinError) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-safe py-6 text-center">
@@ -193,7 +245,7 @@ export function ClipboardSender({ code }: Props) {
         ? "Connecting to desktop…"
         : p2p.status === "failed"
           ? (p2p.error ?? "Connection failed")
-          : "Open the sync page on your computer first, then send";
+          : "Desktop not linked — open the sync page on your computer, then send";
 
   const sendLabel =
     sendState === "copied"
@@ -205,23 +257,22 @@ export function ClipboardSender({ code }: Props) {
           : "Send to browser";
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
+    <div className="flex min-h-dvh min-w-0 flex-col overflow-x-hidden bg-background">
       <header className="shrink-0 border-b border-border pt-safe">
         <div className="flex items-center justify-center px-safe py-3 sm:py-4">
           <OnariamLogo href={null} size="sm" />
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-lg min-h-0 flex-1 flex-col px-safe">
-        <div className="shrink-0 py-4 text-center">
-          <p className="font-mono text-xs text-muted-foreground sm:text-sm">
-            {formatted}
-          </p>
+      <div className={cn(pageShell, stackLayout, "max-w-lg flex-1 py-4 sm:py-6")}>
+        <div className="shrink-0 space-y-1 text-center">
+          <p className="font-mono text-xs text-muted-foreground">{formatted}</p>
+          <h1 className="text-base font-medium text-foreground">Send to desktop</h1>
           <p
             className={cn(
               "mt-2 text-sm",
               sendState === "copied" || p2p.status === "connected"
-                ? "text-emerald-500"
+                ? "text-accent-foreground"
                 : p2p.status === "failed"
                   ? "text-destructive"
                   : "text-muted-foreground"
@@ -230,7 +281,7 @@ export function ClipboardSender({ code }: Props) {
             {statusText}
           </p>
           {sendState === "copied" && (
-            <p className="mt-1 flex items-center justify-center gap-1 text-xs text-emerald-500">
+            <p className="mt-1 flex items-center justify-center gap-1 text-xs text-accent-foreground">
               <Check className="size-3.5 shrink-0" aria-hidden />
               Desktop copied to clipboard
             </p>
@@ -240,11 +291,13 @@ export function ClipboardSender({ code }: Props) {
         <div
           className={cn(
             panel,
-            "flex min-h-0 flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4"
+            "flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-0"
           )}
         >
-          <p className="shrink-0 text-sm font-medium">Paste or type</p>
-          <div className="min-h-0 flex-1">
+          <p className="shrink-0 px-3 pt-3 text-sm font-medium sm:px-4 sm:pt-4">
+            Paste or type
+          </p>
+          <div className="min-h-0 flex-1 px-3 sm:px-4">
             <ClipboardEditor
               key={editorKey}
               initialContent={editorSeed}
@@ -256,11 +309,11 @@ export function ClipboardSender({ code }: Props) {
             />
           </div>
 
-          <div className="sticky bottom-0 -mx-3 shrink-0 border-t border-border bg-card px-3 pb-safe pt-3 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
+          <div className="sticky bottom-0 shrink-0 border-t border-border bg-card px-3 pb-safe pt-3 sm:static sm:border-0 sm:bg-transparent sm:px-4 sm:pb-0">
             <div className="flex flex-col gap-2">
               <Button
                 type="button"
-                className="h-12 w-full touch-manipulation sm:h-10"
+                className={cn(touchTarget, "h-12 w-full")}
                 disabled={
                   !draft.text.trim() ||
                   p2p.status !== "connected" ||

@@ -8,6 +8,7 @@ import {
   AvatarPicker,
   DEFAULT_AVATAR_ID,
 } from "@/components/avatar-picker";
+import { JoinSessionProfile } from "@/components/join-session-profile";
 import { OnariamLogo } from "@/components/onariam-logo";
 import { LobbyEmojiFlow } from "@/components/lobby-emoji-flow";
 import { LobbyNameInput } from "@/components/lobby-name-input";
@@ -15,14 +16,10 @@ import { Button } from "@/components/ui/button";
 import { useDeviceId } from "@/hooks/use-device-id";
 import type { AvatarId } from "@/lib/avatars";
 import { getAvatarEmoji } from "@/lib/avatars";
-import {
-  isValidMeetCode,
-  meetPath,
-  normalizeMeetCodeInput,
-} from "@/lib/meet-code";
+import { meetPath } from "@/lib/meet-code";
 import { createMeeting, type MeetingMembership } from "@/lib/meetings";
 import { saveRoomSession } from "@/lib/room-session";
-import { input } from "@/lib/ui";
+import { panel } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 const LOBBY_DRAFT_KEY = "onariam-lobby-draft";
@@ -145,7 +142,6 @@ export function RoomLobby() {
 
   const [name, setName] = useState("");
   const [avatarId, setAvatarId] = useState<AvatarId>(DEFAULT_AVATAR_ID);
-  const [code, setCode] = useState("");
 
   const [launching, setLaunching] = useState(false);
   const [swoosh, setSwoosh] = useState(false);
@@ -282,37 +278,38 @@ export function RoomLobby() {
     }
   };
 
-  const handleJoin = () => {
+  const handleJoinProfile = async ({
+    code: joinCode,
+    name: joinName,
+    avatarId: joinAvatarId,
+  }: {
+    code: string;
+    name: string;
+    avatarId: AvatarId;
+  }) => {
     if (!deviceId || submitLock.current) return;
-
-    const formatted = normalizeMeetCodeInput(code);
-    if (!isValidMeetCode(formatted)) {
-      showError("Use format abc-defg-hijk");
-      return;
-    }
 
     submitLock.current = true;
     setError(null);
 
-    const displayName = name.trim() || `Guest ${deviceId.slice(-4)}`;
+    const displayName = joinName.trim() || `Guest ${deviceId.slice(-4)}`;
 
     saveRoomSession({
-      topic: formatted,
+      topic: joinCode,
       title: "Session",
       displayName,
       deviceFingerprint: deviceId,
-      avatarId,
+      avatarId: joinAvatarId,
       isHost: false,
       memberStatus: "pending",
     });
 
     startTransition(() => {
-      router.push(meetPath(formatted));
+      router.push(meetPath(joinCode));
     });
   };
 
   const busy = launching || isPending || !ready || !deviceId;
-  const codeReady = isValidMeetCode(normalizeMeetCodeInput(code));
 
   const stepAnim =
     stepDir === "fwd" ? "animate-lobby-step-in" : "animate-lobby-step-back";
@@ -320,14 +317,14 @@ export function RoomLobby() {
   const nameReady = name.trim().length > 0;
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-x-hidden p-4 md:p-8">
+    <main className="relative flex min-h-dvh min-w-0 items-center justify-center overflow-x-hidden p-4 sm:p-6 md:p-8">
       <LobbyEmojiFlow
         ctaHovering={view === "home" && homeCtaHovering}
         launchPull={launchPull}
       />
       <div
         className={cn(
-          "relative z-10 w-full max-w-[400px] animate-lobby-pop space-y-6 motion-safe:transition-opacity motion-safe:duration-500",
+          "relative z-10 w-full min-w-0 max-w-md animate-lobby-pop space-y-6 motion-safe:transition-opacity motion-safe:duration-500",
           launchPull !== null && "opacity-20"
         )}
       >
@@ -358,11 +355,23 @@ export function RoomLobby() {
 
           {view === "home" && (
             <div
-              className="flex flex-col gap-3 px-2 py-5 sm:px-4 sm:py-6 motion-safe:[perspective:900px]"
+              className={cn(
+                panel,
+                "flex flex-col gap-4 p-5 motion-safe:[perspective:900px] sm:p-6"
+              )}
               style={{ transformStyle: "preserve-3d" }}
               onMouseEnter={() => setHomeCtaHovering(true)}
               onMouseLeave={() => setHomeCtaHovering(false)}
             >
+              <div className="space-y-1 text-center">
+                <h1 className="text-lg font-medium text-foreground">
+                  Sync clipboard across devices
+                </h1>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Host a session or join with a code. Phone to browser,
+                  peer-to-peer.
+                </p>
+              </div>
               <Button
                 type="button"
                 disabled={!ready || !deviceId}
@@ -373,13 +382,7 @@ export function RoomLobby() {
                   setNameFieldReset((n) => n + 1);
                   setError(null);
                 }}
-                className={cn(
-                  homeCtaHover,
-                  "h-12 w-full rounded-lg text-base font-semibold",
-                  "shadow-[0_1px_0_rgba(255,255,255,0.08)_inset]",
-                  "motion-safe:hover:shadow-[0_14px_40px_-10px_rgba(254,85,55,0.55)]",
-                  "disabled:motion-safe:hover:scale-100 disabled:motion-safe:hover:translate-y-0 disabled:motion-safe:hover:shadow-none"
-                )}
+                className={cn(homeCtaHover, "h-12 w-full text-base")}
                 size="lg"
               >
                 Start sync
@@ -391,12 +394,7 @@ export function RoomLobby() {
                   setView("join");
                   setError(null);
                 }}
-                className={cn(
-                  homeCtaHover,
-                  "h-11 w-full rounded-lg border-border/80 bg-transparent text-sm font-medium text-muted-foreground",
-                  "hover:border-primary/35 hover:bg-foreground/[0.05] hover:text-foreground",
-                  "motion-safe:hover:shadow-[0_12px_36px_-12px_rgba(0,0,0,0.55)]"
-                )}
+                className={cn(homeCtaHover, "h-11 w-full")}
                 size="lg"
               >
                 Join with code
@@ -477,56 +475,19 @@ export function RoomLobby() {
           )}
 
           {view === "join" && (
-            <div className="animate-lobby-step-in space-y-4">
-              <div className="flex items-start gap-2">
-                <WizardBack
-                  onClick={() => {
-                    setView("home");
-                    setError(null);
-                  }}
-                />
-                <div className="min-w-0 flex-1 space-y-1 text-center">
-                  <p className="text-lg font-semibold tracking-tight text-foreground">
-                    Enter code
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    From whoever started the sync.
-                  </p>
-                </div>
-              </div>
-              <input
-                className={cn(
-                  input,
-                  "h-11 font-mono text-center text-base tracking-[0.14em]",
-                  codeReady && "border-primary/50 ring-1 ring-primary/25"
-                )}
-                value={code}
-                onChange={(e) => {
-                  setCode(normalizeMeetCodeInput(e.target.value));
-                  setError(null);
-                }}
-                placeholder="abc-defg-hijk"
-                maxLength={12}
-                autoComplete="off"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && codeReady && !busy) handleJoin();
-                }}
-              />
-              <Button
-                type="button"
-                disabled={busy || !codeReady}
-                onClick={handleJoin}
-                className="h-12 w-full text-base motion-safe:active:scale-[0.98]"
-                size="lg"
-              >
-                {isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  "Join"
-                )}
-              </Button>
-            </div>
+            <JoinSessionProfile
+              title="Join with code"
+              subtitle="Enter the code, your name, and an icon for the session."
+              submitLabel="Continue to session"
+              busy={busy}
+              error={error}
+              onBack={() => {
+                setView("home");
+                setError(null);
+                submitLock.current = false;
+              }}
+              onSubmit={handleJoinProfile}
+            />
           )}
 
           {error && (

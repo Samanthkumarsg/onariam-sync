@@ -1,13 +1,13 @@
 "use client";
 
-import { Check, ClipboardCheck, Copy, Smartphone, UserRound } from "lucide-react";
+import { Check, ClipboardCheck, Copy, Smartphone } from "lucide-react";
 
 import { MemberTagPicker } from "@/components/member-tag-picker";
 import { Button } from "@/components/ui/button";
 import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
 import type { ClipboardInboxItem } from "@/lib/clipboard-inbox-storage";
 import type { RoomMember } from "@/lib/meetings";
-import { panel } from "@/lib/ui";
+import { paperCard } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -19,6 +19,7 @@ type Props = {
   currentDeviceFingerprint: string;
   onAssigneeChange?: (id: string, assignee: ClipboardAssignee | null) => void;
   onCopy: () => void;
+  showAssignee?: boolean;
 };
 
 function sourceLabel(item: ClipboardInboxItem) {
@@ -37,104 +38,81 @@ export function ClipboardInboxItemCard({
   currentDeviceFingerprint,
   onAssigneeChange,
   onCopy,
+  showAssignee = true,
 }: Props) {
   const from = sourceLabel(item);
   const copied = item.copiedToClipboard;
   const assignee = item.assignee;
-  const canAssign = members.length > 0 && onAssigneeChange;
+  const canAssign =
+    showAssignee && members.length > 0 && Boolean(onAssigneeChange);
 
   return (
     <li
       className={cn(
-        panel,
-        "relative flex flex-col gap-3 p-3.5 transition-shadow sm:p-5",
-        isLatest && "border-primary/25 ring-1 ring-primary/15",
-        copied &&
-          "border-l-[3px] border-l-emerald-500/80 pl-[calc(0.875rem-3px)] sm:pl-[calc(1.25rem-3px)]",
-        highlightCopy && "ring-2 ring-emerald-500/40",
-        !copied && "border-l-[3px] border-l-transparent"
+        paperCard,
+        "relative z-0 flex flex-col gap-2.5 p-3.5 sm:p-4",
+        isLatest && "paper-card--latest z-[1]",
+        highlightCopy && "paper-card--highlight"
       )}
-      aria-label={copied ? "Clipboard item, copied" : "Clipboard item, not copied yet"}
+      aria-label={copied ? "Clipboard item, copied" : "Clipboard item"}
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          {isLatest && (
-            <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-              Latest
-            </span>
-          )}
-          {from && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-elevated px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-              {item.source === "mobile" ? (
-                <Smartphone className="size-3" aria-hidden />
-              ) : null}
-              {from}
-              {item.author ? ` · ${item.author}` : ""}
-            </span>
-          )}
-          {assignee && !canAssign && (
-            <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-              <span aria-hidden>{assignee.avatar}</span>
-              <span className="truncate">{assignee.displayName}</span>
-            </span>
-          )}
-        </div>
-
-        <span
-          className={cn(
-            "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-            copied
-              ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-400"
-              : "border-border bg-surface-elevated text-muted-foreground"
-          )}
-          title={copied ? "Copied to your system clipboard" : "Not copied yet"}
+      <div className="relative z-[1] flex items-start gap-2.5">
+        {item.html ? (
+          <div
+            className={cn(
+              "clipboard-rich min-w-0 flex-1 line-clamp-3 font-[family-name:var(--font-display)] text-sm leading-relaxed text-foreground",
+              "[&_p]:mb-1 [&_p:last-child]:mb-0",
+              "[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-4"
+            )}
+            dangerouslySetInnerHTML={{ __html: item.html }}
+          />
+        ) : (
+          <p className="min-w-0 flex-1 line-clamp-3 whitespace-pre-wrap break-words font-[family-name:var(--font-display)] text-sm leading-relaxed text-foreground">
+            {item.text}
+          </p>
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 shrink-0 gap-1 border-[#e5e1d8] bg-[#fdfcfa]/90 px-2.5 shadow-none hover:bg-white/90"
+          aria-label={copied ? "Copy again" : "Copy to clipboard"}
+          onClick={onCopy}
         >
-          {copied ? (
-            <>
-              <ClipboardCheck className="size-3" aria-hidden />
-              Copied
-            </>
+          {copying ? (
+            <Check className="size-3.5 shrink-0" aria-hidden />
           ) : (
-            "Not copied"
+            <Copy className="size-3.5 shrink-0" aria-hidden />
           )}
-        </span>
+          <span className="sr-only">
+            {copied ? "Copy again" : "Copy to clipboard"}
+          </span>
+        </Button>
       </div>
 
-      {item.html ? (
-        <div
-          className={cn(
-            "clipboard-rich text-sm leading-relaxed text-foreground sm:text-[15px]",
-            "[&_p]:mb-2 [&_p:last-child]:mb-0",
-            "[&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5"
-          )}
-          dangerouslySetInnerHTML={{ __html: item.html }}
-        />
-      ) : (
-        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground sm:text-[15px]">
-          {item.text}
-        </p>
-      )}
-
-      {canAssign && (
-        <div className="rounded-lg border border-border/80 bg-surface-elevated/40 p-2.5 sm:p-3">
-          <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <UserRound className="size-3.5 shrink-0" aria-hidden />
-            Tag for
-          </p>
-          <MemberTagPicker
-            members={members}
-            currentDeviceFingerprint={currentDeviceFingerprint}
-            value={assignee}
-            onChange={(next) => onAssigneeChange(item.id, next)}
-            label=""
-            className="space-y-0"
-          />
-        </div>
-      )}
-
-      <div className="flex flex-col gap-3 border-t border-border/80 pt-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="relative z-[1] flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 border-t border-[#e5e1d8]/90 pt-2 text-[11px] text-ink-muted">
+        {isLatest && (
+          <span className="rounded-sm border border-[#d9d4c8] bg-[#fdfcfa] px-1 py-px font-mono text-[10px] font-medium uppercase tracking-wide text-ink-muted">
+            Latest
+          </span>
+        )}
+        {from && (
+          <span className="inline-flex max-w-full items-center gap-0.5 truncate">
+            {item.source === "mobile" ? (
+              <Smartphone className="size-2.5 shrink-0" aria-hidden />
+            ) : null}
+            {from}
+            {item.author ? ` · ${item.author}` : ""}
+          </span>
+        )}
+        {assignee && !canAssign && (
+          <span className="inline-flex max-w-full items-center gap-0.5 truncate text-primary">
+            <span aria-hidden>{assignee.avatar}</span>
+            <span className="truncate">{assignee.displayName}</span>
+          </span>
+        )}
         <time
-          className="text-xs tabular-nums text-muted-foreground"
+          className="tabular-nums"
           dateTime={new Date(item.at).toISOString()}
         >
           {new Date(item.at).toLocaleString(undefined, {
@@ -144,26 +122,24 @@ export function ClipboardInboxItemCard({
             minute: "2-digit",
           })}
         </time>
-        <Button
-          type="button"
-          variant={copying ? "secondary" : copied ? "secondary" : "outline"}
-          size="sm"
-          className="h-11 w-full touch-manipulation sm:h-9 sm:min-w-[5.5rem] sm:w-auto"
-          onClick={onCopy}
-        >
-          {copying ? (
-            <>
-              <Check className="size-4 shrink-0" aria-hidden />
-              Copied
-            </>
-          ) : (
-            <>
-              <Copy className="size-4 shrink-0" aria-hidden />
-              {copied ? "Copy again" : "Copy"}
-            </>
-          )}
-        </Button>
+        {copied ? (
+          <span className="inline-flex items-center gap-0.5 text-accent-foreground">
+            <ClipboardCheck className="size-2.5 shrink-0" aria-hidden />
+            Copied
+          </span>
+        ) : null}
       </div>
+
+      {canAssign && onAssigneeChange && (
+        <MemberTagPicker
+          members={members}
+          currentDeviceFingerprint={currentDeviceFingerprint}
+          value={assignee}
+          onChange={(next) => onAssigneeChange(item.id, next)}
+          label=""
+          className="relative z-[1] space-y-0 [&>p:first-child]:hidden [&_button]:min-h-7 [&_button]:border-[#e5e1d8] [&_button]:bg-[#fdfcfa]/80"
+        />
+      )}
     </li>
   );
 }

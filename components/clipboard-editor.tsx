@@ -116,13 +116,13 @@ export function ClipboardEditor({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-lg border border-border bg-input ring-1 ring-inset ring-white/[0.03]",
+        "overflow-hidden rounded-lg border border-border bg-input",
         "focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25",
         disabled && "opacity-60",
         className
       )}
     >
-      <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-card/60 px-1.5 py-1">
+      <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-card/60 px-1 py-1 sm:px-1.5">
         <ToolbarButton
           label="Bold"
           disabled={disabled}

@@ -1,32 +1,35 @@
 import { cn } from "@/lib/utils";
 
-/** Linear design primitives — see DESIGN.md */
+/** Cohere design primitives — see DESIGN.md */
 
 export const eyebrow =
-  "text-[13px] font-medium uppercase tracking-[0.04em] text-muted-foreground";
+  "font-mono text-xs font-normal uppercase tracking-[0.28px] text-muted-foreground";
 
 export const headline =
-  "text-[28px] font-semibold leading-tight tracking-[-0.02em] text-foreground";
+  "font-[family-name:var(--font-display)] text-2xl font-normal leading-tight tracking-[-0.02em] text-foreground sm:text-[28px] md:text-[32px]";
 
-export const subhead = "text-sm leading-normal text-ink-muted";
+export const subhead = "text-sm leading-relaxed text-ink-muted";
 
 export const label = "text-sm text-muted-foreground";
 
 export const panel = cn(
-  "rounded-lg border border-border bg-card p-6",
-  "shadow-none ring-1 ring-inset ring-white/[0.04]"
+  "rounded-lg border border-border bg-card",
+  "p-4 sm:p-6",
+  "shadow-none"
 );
 
+/** Warm note on canvas — see globals.css `.paper-card` */
+export const paperCard = "paper-card rounded-lg";
+
 export const popover = cn(
-  "rounded-lg border border-border bg-card shadow-lg",
-  "ring-1 ring-inset ring-white/[0.04]"
+  "rounded-lg border border-border bg-popover shadow-none"
 );
 
 export const input = cn(
-  "h-9 w-full rounded-md border border-border bg-input px-3 text-sm text-foreground",
+  "h-11 w-full min-w-0 rounded-md border border-border bg-input px-3.5 text-base text-foreground sm:h-10 sm:text-sm",
   "placeholder:text-muted-foreground",
   "transition-colors outline-none",
-  "focus:border-primary focus:ring-2 focus:ring-primary/30"
+  "focus:border-[#9b60aa] focus:ring-2 focus:ring-[#9b60aa]/25"
 );
 
 export const btnGhost = cn(
@@ -35,8 +38,19 @@ export const btnGhost = cn(
 );
 
 export const chip = cn(
-  "inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1",
+  "inline-flex max-w-full items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1",
   "font-mono text-[13px] text-foreground"
 );
 
 export const divider = "h-px flex-1 bg-border";
+
+/** Shared page width — toolbar and main content stay aligned */
+export const pageShell =
+  "mx-auto w-full min-w-0 max-w-3xl px-safe sm:px-6";
+
+/** Vertical rhythm for session / form pages */
+export const stackLayout = "flex min-h-0 flex-1 flex-col gap-4 sm:gap-6";
+
+/** Minimum touch target (Fitts's law, WCAG 2.5.5) */
+export const touchTarget =
+  "min-h-11 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40";

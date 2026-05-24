@@ -18,7 +18,7 @@ export function QrDisplay({ url, size = 200, className }: Props) {
     void QRCode.toCanvas(canvas, url, {
       width: size,
       margin: 1,
-      color: { dark: "#0f1011", light: "#f7f8f8" },
+      color: { dark: "#17171c", light: "#ffffff" },
     });
   }, [url, size]);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Plus } from "lucide-react";
+import { ClipboardPaste, Plus, X } from "lucide-react";
 import { useCallback, useId, useState } from "react";
 
 import {
@@ -14,7 +14,7 @@ import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
 import { createClipboardPayload } from "@/lib/clipboard-p2p";
 import type { ClipboardInboxItem } from "@/lib/clipboard-inbox-storage";
 import type { RoomMember } from "@/lib/meetings";
-import { panel } from "@/lib/ui";
+import { touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -26,6 +26,7 @@ type Props = {
   onOpenChange?: (open: boolean) => void;
   onAdd: (item: ClipboardInboxItem) => void;
   onBroadcast?: (item: ClipboardInboxItem) => void;
+  showAssignee?: boolean;
   className?: string;
 };
 
@@ -38,6 +39,7 @@ export function ClipboardCompose({
   onOpenChange,
   onAdd,
   onBroadcast,
+  showAssignee = true,
   className,
 }: Props) {
   const panelId = useId();
@@ -56,7 +58,7 @@ export function ClipboardCompose({
   const pasteFromSystem = useCallback(async () => {
     try {
       const clip = await navigator.clipboard.readText();
-      if (!clip) return;
+      if (!clip) return false;
       const html = `<p>${clip
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -65,11 +67,16 @@ export function ClipboardCompose({
       setDraft({ text: clip, html });
       setEditorSeed(html);
       setEditorKey((k) => k + 1);
-      if (!open) setOpen(true);
+      return true;
     } catch {
-      /* denied */
+      return false;
     }
-  }, [open, setOpen]);
+  }, []);
+
+  const openAndPaste = useCallback(async () => {
+    setOpen(true);
+    await pasteFromSystem();
+  }, [pasteFromSystem, setOpen]);
 
   const resetEditor = () => {
     setDraft({ html: "", text: "" });
@@ -104,106 +111,78 @@ export function ClipboardCompose({
   const canAdd = draft.text.trim().length > 0;
 
   return (
-    <div
-      className={cn(
-        panel,
-        "overflow-hidden p-0 transition-shadow duration-300",
-        open && "ring-1 ring-primary/20 shadow-md shadow-primary/5",
-        className
-      )}
-    >
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        aria-controls={panelId}
-        className={cn(
-          "flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left transition-colors touch-manipulation sm:px-4",
-          "hover:bg-surface-elevated/60 active:scale-[0.995]",
-          open && "bg-surface-elevated/40"
-        )}
-      >
-        <span className="flex min-w-0 items-center gap-2.5">
-          <span
-            className={cn(
-              "flex size-8 shrink-0 items-center justify-center rounded-lg border transition-all duration-300",
-              open
-                ? "border-primary/40 bg-primary/15 text-primary rotate-0"
-                : "border-border bg-card text-muted-foreground"
-            )}
-          >
-            <Plus
-              className={cn(
-                "size-4 transition-transform duration-300",
-                open && "rotate-90"
-              )}
-              aria-hidden
-            />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-sm font-medium text-foreground">
+    <div className={cn("shrink-0", className)}>
+      {!open ? (
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          className="h-9 gap-1.5 px-3"
+          onClick={() => void openAndPaste()}
+        >
+          <ClipboardPaste className="size-3.5 shrink-0" aria-hidden />
+          Add to inbox
+        </Button>
+      ) : (
+        <div
+          className={cn(
+            "overflow-hidden rounded-md border border-border bg-card transition-shadow duration-300",
+            "ring-1 ring-primary/20 shadow-md shadow-primary/5"
+          )}
+        >
+          <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
+            <span className="text-xs font-medium text-muted-foreground">
               Add to inbox
             </span>
-            <span className="block truncate text-xs text-muted-foreground">
-              {open
-                ? isHost
-                  ? "Host paste · assign a tag"
-                  : "Compose · assign a tag"
-                : "Tap to paste or compose"}
-            </span>
-          </span>
-        </span>
-        <ChevronDown
-          className={cn(
-            "size-4 shrink-0 text-muted-foreground transition-transform duration-300 ease-out",
-            open && "rotate-180 text-primary"
-          )}
-          aria-hidden
-        />
-      </button>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className={cn(
+                touchTarget,
+                "inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-surface-elevated hover:text-foreground"
+              )}
+              aria-label="Close editor"
+            >
+              <X className="size-3.5" aria-hidden />
+            </button>
+          </div>
 
-      <div
-        id={panelId}
-        className={cn(
-          "grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-        )}
-      >
-        <div className="overflow-hidden">
           <div
-            className={cn(
-              "compose-panel-in flex flex-col gap-3 border-t border-border px-3.5 pb-3.5 pt-3 sm:gap-4 sm:px-4 sm:pb-4",
-              open && "compose-panel-in-active"
-            )}
+            id={panelId}
+            className="compose-panel-in compose-panel-in-active flex flex-col gap-2.5 px-3 pb-3 pt-2.5 sm:gap-3 sm:px-3.5 sm:pb-3.5"
           >
             <ClipboardEditor
               key={editorKey}
               initialContent={editorSeed}
-              placeholder="Paste or compose with formatting…"
-              minHeightClassName="min-h-[100px] sm:min-h-[120px]"
+              placeholder="Paste or compose…"
+              minHeightClassName="min-h-[88px] sm:min-h-[100px]"
               onChange={setDraft}
               onPasteFromClipboard={() => void pasteFromSystem()}
             />
 
-            <MemberTagPicker
-              members={members}
-              currentDeviceFingerprint={deviceFingerprint}
-              value={assignee}
-              onChange={setAssignee}
-            />
+            {showAssignee && (
+              <MemberTagPicker
+                members={members}
+                currentDeviceFingerprint={deviceFingerprint}
+                value={assignee}
+                onChange={setAssignee}
+                className="space-y-1.5 [&_button]:min-h-7"
+              />
+            )}
 
             <Button
               type="button"
-              className="h-11 w-full touch-manipulation sm:h-10 sm:w-auto sm:self-end"
+              size="sm"
+              className="h-9 w-full sm:w-auto sm:self-end"
               disabled={!canAdd}
               onClick={handleAdd}
             >
-              <Plus className="size-4 shrink-0" aria-hidden />
+              <Plus className="size-3.5 shrink-0" aria-hidden />
               Save to inbox
             </Button>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

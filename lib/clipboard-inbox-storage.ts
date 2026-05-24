@@ -45,10 +45,16 @@ export function clearClipboardInbox(topic: string) {
   localStorage.removeItem(storageKey(topic));
 }
 
-export function upsertClipboardItem(
+/** Prepend new items; update in place when the same id already exists (assignee / copied state). */
+export function mergeClipboardItem(
   items: ClipboardInboxItem[],
   incoming: ClipboardInboxItem
 ): ClipboardInboxItem[] {
-  const without = items.filter((item) => item.id !== incoming.id);
-  return [incoming, ...without].slice(0, MAX_ITEMS);
+  const index = items.findIndex((item) => item.id === incoming.id);
+  if (index === -1) {
+    return [incoming, ...items].slice(0, MAX_ITEMS);
+  }
+  const next = [...items];
+  next[index] = { ...next[index], ...incoming };
+  return next;
 }

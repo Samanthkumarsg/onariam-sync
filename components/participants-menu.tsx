@@ -1,6 +1,14 @@
 "use client";
 
-import { Check, ChevronDown, Loader2, Users, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  Loader2,
+  Monitor,
+  Smartphone,
+  Users,
+  X,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { useRoomMembers } from "@/hooks/use-room-members";
@@ -11,13 +19,19 @@ import { cn } from "@/lib/utils";
 const MAX_STACK = 3;
 const SCROLL_THRESHOLD = 6;
 
+export type ParticipantDeviceKind = "desktop" | "mobile";
+
 type Props = {
   topic: string;
   deviceFingerprint: string;
   currentDeviceFingerprint: string;
+  /** Device type for the current browser (shown next to "You" in the list). */
+  currentDeviceKind?: ParticipantDeviceKind;
   isHost?: boolean;
   /** Match toolbar control height (e.g. h-9) */
   triggerClassName?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 function AvatarStack({ members, total }: { members: RoomMember[]; total: number }) {
@@ -43,10 +57,22 @@ function AvatarStack({ members, total }: { members: RoomMember[]; total: number 
   );
 }
 
+function DeviceKindIcon({ kind }: { kind: ParticipantDeviceKind }) {
+  const Icon = kind === "mobile" ? Smartphone : Monitor;
+  const label = kind === "mobile" ? "Phone" : "Desktop";
+  return (
+    <span className="shrink-0" title={label}>
+      <Icon className="size-3.5 text-muted-foreground" aria-hidden />
+      <span className="sr-only">{label}</span>
+    </span>
+  );
+}
+
 function MemberRow({
   member,
   isYou,
   isHost,
+  deviceKind,
   onApprove,
   onReject,
   acting,
@@ -54,6 +80,7 @@ function MemberRow({
   member: RoomMember;
   isYou: boolean;
   isHost: boolean;
+  deviceKind?: ParticipantDeviceKind;
   onApprove?: () => void;
   onReject?: () => void;
   acting?: boolean;
@@ -80,8 +107,11 @@ function MemberRow({
         {member.avatar ?? "🦊"}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">
-          {member.display_name}
+        <p className="flex min-w-0 items-center gap-1.5 truncate text-sm font-medium text-foreground">
+          <span className="truncate">{member.display_name}</span>
+          {isYou && deviceKind ? (
+            <DeviceKindIcon kind={deviceKind} />
+          ) : null}
         </p>
         <p className="text-[11px] text-muted-foreground">
           {isYou
@@ -101,7 +131,7 @@ function MemberRow({
             type="button"
             disabled={acting}
             onClick={onApprove}
-            className="flex size-10 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25 disabled:opacity-50 touch-manipulation sm:size-7"
+            className="flex size-10 items-center justify-center rounded-md bg-accent text-accent-foreground hover:bg-accent/80 disabled:opacity-50 touch-manipulation sm:size-7"
             aria-label={`Approve ${member.display_name}`}
           >
             {acting ? (
@@ -129,8 +159,11 @@ export function ParticipantsMenu({
   topic,
   deviceFingerprint,
   currentDeviceFingerprint,
+  currentDeviceKind = "desktop",
   isHost = false,
   triggerClassName,
+  open: openControlled,
+  onOpenChange,
 }: Props) {
   const {
     sortedMembers,
@@ -147,7 +180,9 @@ export function ParticipantsMenu({
     isHost
   );
 
-  const [open, setOpen] = useState(false);
+  const [openInternal, setOpenInternal] = useState(false);
+  const open = openControlled ?? openInternal;
+  const setOpen = onOpenChange ?? setOpenInternal;
   const [actingId, setActingId] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -197,7 +232,7 @@ export function ParticipantsMenu({
     <div ref={rootRef} className="relative shrink-0">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(!open)}
         className={cn(
           btnGhost,
           "inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-card/80 px-2.5 py-0",
@@ -278,6 +313,11 @@ export function ParticipantsMenu({
                   member={m}
                   isYou={m.device_fingerprint === currentDeviceFingerprint}
                   isHost={isHost}
+                  deviceKind={
+                    m.device_fingerprint === currentDeviceFingerprint
+                      ? currentDeviceKind
+                      : undefined
+                  }
                   acting={actingId === m.device_fingerprint}
                   onApprove={
                     isHost && m.status === "pending"

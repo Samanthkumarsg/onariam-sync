@@ -5,10 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { ClipboardSyncShell } from "@/components/clipboard-sync-shell";
+import { JoinSessionProfile } from "@/components/join-session-profile";
 import { WaitingForHost } from "@/components/waiting-for-host";
 import { useDeviceId } from "@/hooks/use-device-id";
 import { AVATARS, type AvatarId } from "@/lib/avatars";
 import { formatMeetCode } from "@/lib/meet-code";
+import { needsJoinProfile } from "@/lib/join-profile";
 import {
   getMyMembership,
   joinMeeting,
@@ -53,14 +55,29 @@ export default function SyncPage() {
   const { deviceId, ready: deviceReady } = useDeviceId();
   const [session, setSession] = useState<RoomSession | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [profileReady, setProfileReady] = useState(false);
+  const [joining, setJoining] = useState(false);
 
   const leave = useCallback(() => {
     clearRoomSession();
     router.push("/");
   }, [router]);
 
+  const showProfileGate =
+    deviceReady &&
+    deviceId &&
+    code &&
+    !profileReady &&
+    needsJoinProfile(code, getRoomSession());
+
   useEffect(() => {
     if (!deviceReady || !deviceId || !code) return;
+    if (needsJoinProfile(code, getRoomSession())) return;
+    setProfileReady(true);
+  }, [code, deviceId, deviceReady]);
+
+  useEffect(() => {
+    if (!profileReady || !deviceReady || !deviceId || !code) return;
 
     let cancelled = false;
 
@@ -75,6 +92,7 @@ export default function SyncPage() {
     };
 
     (async () => {
+      setJoining(true);
       const stored = getRoomSession();
       try {
         const m = await joinMeeting(
@@ -86,13 +104,15 @@ export default function SyncPage() {
         applyMembership(m);
       } catch {
         if (!cancelled) setError("Meeting not found");
+      } finally {
+        if (!cancelled) setJoining(false);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [code, deviceId, deviceReady]);
+  }, [code, deviceId, deviceReady, profileReady]);
 
   useEffect(() => {
     if (!session || session.memberStatus !== "pending" || !deviceId) return;
@@ -120,6 +140,33 @@ export default function SyncPage() {
     };
   }, [session, code, deviceId]);
 
+  if (showProfileGate) {
+    return (
+      <main className="flex min-h-dvh flex-col items-center justify-center p-4 sm:p-6">
+        <JoinSessionProfile
+          code={code}
+          title="Join session"
+          subtitle="Pick your name and icon before entering the room."
+          submitLabel="Join session"
+          onBack={() => router.push("/")}
+          onSubmit={({ code: joinCode, name, avatarId }) => {
+            if (!deviceId) return;
+            saveRoomSession({
+              topic: joinCode,
+              title: "Session",
+              displayName: name.trim() || `Guest ${deviceId.slice(-4)}`,
+              deviceFingerprint: deviceId,
+              avatarId,
+              isHost: false,
+              memberStatus: "pending",
+            });
+            setProfileReady(true);
+          }}
+        />
+      </main>
+    );
+  }
+
   if (error) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
@@ -137,7 +184,7 @@ export default function SyncPage() {
   if (!session) {
     return (
       <main className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
-        Joining session…
+        {joining ? "Joining session…" : "Loading…"}
       </main>
     );
   }

@@ -1,13 +1,18 @@
 "use client";
 
-import { Clipboard, ClipboardCheck } from "lucide-react";
+import { ClipboardCheck, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ClipboardCompose } from "@/components/clipboard-compose";
 import { ClipboardInboxItemCard } from "@/components/clipboard-inbox-item";
+import { HostPendingBanner } from "@/components/host-pending-banner";
+import { InboxEmptyState } from "@/components/inbox-empty-state";
 import { LeaveSessionDialog } from "@/components/leave-session-dialog";
+import { SessionAiPanel } from "@/components/session-ai-panel";
 import { SessionToolbar } from "@/components/session-toolbar";
+import { Button } from "@/components/ui/button";
 import { useClipboardP2p } from "@/hooks/use-clipboard-p2p";
+import { useClipboardRoomSync } from "@/hooks/use-clipboard-room-sync";
 import { useRoomMembers } from "@/hooks/use-room-members";
 import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
 import type { ClipboardPayload } from "@/lib/clipboard-p2p";
@@ -15,12 +20,12 @@ import {
   clearClipboardInbox,
   loadClipboardInbox,
   saveClipboardInbox,
-  upsertClipboardItem,
+  mergeClipboardItem,
   type ClipboardInboxItem,
 } from "@/lib/clipboard-inbox-storage";
-import { meetShareUrl, sendShareUrl } from "@/lib/meet-code";
+import { sendShareUrl } from "@/lib/meet-code";
 import type { RoomSession } from "@/lib/room-session";
-import { eyebrow, panel, subhead } from "@/lib/ui";
+import { pageShell, stackLayout, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -60,15 +65,16 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
   const [hydrated, setHydrated] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [autoCopiedId, setAutoCopiedId] = useState<string | null>(null);
-  const [copiedLink, setCopiedLink] = useState(false);
   const [copiedSendLink, setCopiedSendLink] = useState(false);
   const [showSendUrl, setShowSendUrl] = useState(false);
-  const [showQr, setShowQr] = useState(true);
   const [autoCopy, setAutoCopy] = useState(true);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [pairOpen, setPairOpen] = useState(false);
+  const [participantsOpen, setParticipantsOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
 
-  const { members } = useRoomMembers(
+  const { members, pendingMembers } = useRoomMembers(
     session.topic,
     session.deviceFingerprint,
     session.deviceFingerprint,
@@ -84,6 +90,11 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
     localId: session.deviceFingerprint,
   });
 
+  const phoneLinked = p2p.status === "connected";
+  const roomSyncEnabled =
+    session.memberStatus !== "pending" && session.memberStatus !== "rejected";
+  const showAssignee = members.filter((m) => m.status === "approved").length > 1;
+
   const persistItems = useCallback(
     (next: ClipboardInboxItem[]) => {
       setItems(next);
@@ -94,20 +105,44 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
 
   const addItem = useCallback(
     (incoming: ClipboardInboxItem) => {
-      persistItems(upsertClipboardItem(itemsRef.current, incoming));
+      persistItems(mergeClipboardItem(itemsRef.current, incoming));
     },
     [persistItems]
   );
 
-  const updateAssignee = useCallback(
-    (id: string, assignee: ClipboardAssignee | null) => {
-      persistItems(
-        itemsRef.current.map((row) =>
-          row.id === id ? { ...row, assignee } : row
-        )
-      );
+  const mergeRemoteItems = useCallback(
+    (incoming: ClipboardInboxItem[]) => {
+      if (incoming.length === 0) return;
+      let next = itemsRef.current;
+      for (const item of incoming) {
+        next = mergeClipboardItem(next, item);
+      }
+      persistItems(next);
     },
     [persistItems]
+  );
+
+  const roomSync = useClipboardRoomSync({
+    topic: session.topic,
+    deviceFingerprint: session.deviceFingerprint,
+    enabled: roomSyncEnabled,
+    getItems: () => itemsRef.current,
+    onUpsert: addItem,
+    onMergeBatch: mergeRemoteItems,
+  });
+
+  const updateAssignee = useCallback(
+    (id: string, assignee: ClipboardAssignee | null) => {
+      const next = itemsRef.current.map((row) =>
+        row.id === id ? { ...row, assignee } : row
+      );
+      persistItems(next);
+      const updated = next.find((row) => row.id === id);
+      if (updated) {
+        roomSync.publishUpsert(updated);
+      }
+    },
+    [persistItems, roomSync]
   );
 
   useEffect(() => {
@@ -115,12 +150,6 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
     setItems(stored);
     setHydrated(true);
   }, [session.topic]);
-
-  useEffect(() => {
-    if (p2p.status === "connected") {
-      setShowQr(false);
-    }
-  }, [p2p.status]);
 
   const handleReceive = useCallback(
     async (payload: ClipboardPayload) => {
@@ -136,17 +165,17 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
         }
       }
       p2p.sendAck(payload.id, copiedToClipboard);
-      addItem(
-        toInboxItem(
-          {
-            ...payload,
-            source: payload.source ?? "mobile",
-          },
-          copiedToClipboard
-        )
+      const item = toInboxItem(
+        {
+          ...payload,
+          source: payload.source ?? "mobile",
+        },
+        copiedToClipboard
       );
+      addItem(item);
+      roomSync.publishUpsert(item);
     },
-    [autoCopy, p2p, addItem]
+    [autoCopy, p2p, addItem, roomSync]
   );
 
   useEffect(() => {
@@ -185,7 +214,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
+    <div className="flex min-h-dvh min-w-0 flex-col overflow-x-hidden bg-background">
       <LeaveSessionDialog
         open={leaveOpen}
         itemCount={items.length}
@@ -199,17 +228,10 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
 
       <SessionToolbar
         session={session}
+        phoneLinked={phoneLinked}
+        pairOpen={pairOpen}
+        onPairOpenChange={setPairOpen}
         sendUrl={sendUrl}
-        p2pStatus={p2p.status}
-        p2pError={p2p.error}
-        showQr={showQr}
-        onToggleQr={() => setShowQr((v) => !v)}
-        copiedInvite={copiedLink}
-        onCopyInvite={() => {
-          void navigator.clipboard.writeText(meetShareUrl(session.topic));
-          setCopiedLink(true);
-          setTimeout(() => setCopiedLink(false), 1500);
-        }}
         copiedSendLink={copiedSendLink}
         onCopySendLink={() => {
           void navigator.clipboard.writeText(sendUrl);
@@ -219,11 +241,20 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
         showSendUrl={showSendUrl}
         onToggleSendUrl={() => setShowSendUrl((v) => !v)}
         onLeave={requestLeave}
+        participantsOpen={participantsOpen}
+        onParticipantsOpenChange={setParticipantsOpen}
       />
+
+      {session.isHost && (
+        <HostPendingBanner
+          count={pendingMembers.length}
+          onReview={() => setParticipantsOpen(true)}
+        />
+      )}
 
       {autoCopiedId && (
         <div
-          className="pointer-events-none fixed bottom-safe left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-emerald-500/30 bg-card px-4 py-2.5 text-sm font-medium text-emerald-400 shadow-xl"
+          className="pointer-events-none fixed bottom-safe left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-accent-foreground/30 bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground shadow-none"
           role="status"
         >
           <ClipboardCheck className="size-4 shrink-0" aria-hidden />
@@ -231,108 +262,80 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
         </div>
       )}
 
-      <main className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col gap-4 px-safe py-4 sm:px-6 sm:py-6 md:py-8">
-        <ClipboardCompose
-          isHost={Boolean(session.isHost)}
-          displayName={session.displayName}
-          deviceFingerprint={session.deviceFingerprint}
-          members={members}
-          open={composeOpen}
-          onOpenChange={setComposeOpen}
-          onAdd={addItem}
-          onBroadcast={(item) => {
-            if (p2p.status === "connected") {
-              p2p.sendPayload(item.text, {
-                html: item.html,
-                source: item.source,
-                author: item.author,
-                assignee: item.assignee,
-                id: item.id,
-                at: item.at,
-              });
-            }
-          }}
-        />
-
+      <main
+        id="session-main"
+        className={cn(pageShell, stackLayout, "flex-1 py-4 sm:py-6 md:py-8")}
+      >
         <section
-          className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4"
-          aria-label="Clipboard inbox"
+          className="flex min-h-0 flex-1 flex-col gap-4"
+          aria-label="Session inbox"
         >
-          <header className="flex shrink-0 flex-col gap-3 border-b border-border pb-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:pb-4">
-            <div className="min-w-0 space-y-0.5 sm:space-y-1">
-              <p className={eyebrow}>Inbox</p>
-              <h1 className="text-lg font-semibold tracking-tight text-foreground sm:text-2xl">
-                Clipboard inbox
-              </h1>
-              <p className={cn(subhead, "text-xs sm:text-sm")}>
-                {!hydrated
-                  ? "Loading saved items…"
-                  : items.length === 0
-                    ? "Received text appears here and stays after refresh."
-                    : `${items.length} item${items.length === 1 ? "" : "s"} · saved on this device`}
-              </p>
-            </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <ClipboardCompose
+              isHost={Boolean(session.isHost)}
+              displayName={session.displayName}
+              deviceFingerprint={session.deviceFingerprint}
+              members={members}
+              open={composeOpen}
+              onOpenChange={setComposeOpen}
+              showAssignee={showAssignee}
+              className="min-w-0 flex-1"
+              onAdd={(item) => {
+                addItem(item);
+                roomSync.publishUpsert(item);
+              }}
+              onBroadcast={(item) => {
+                if (phoneLinked) {
+                  p2p.sendPayload(item.text, {
+                    html: item.html,
+                    source: item.source,
+                    author: item.author,
+                    assignee: item.assignee,
+                    id: item.id,
+                    at: item.at,
+                  });
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 shrink-0 gap-1.5 px-3"
+              onClick={() => setAiOpen(true)}
+              aria-label="Local AI assist"
+            >
+              <Sparkles className="size-3.5 shrink-0" aria-hidden />
+              AI
+            </Button>
+          </div>
 
-            <label className="flex min-h-11 w-full cursor-pointer items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-surface-elevated touch-manipulation sm:w-auto sm:shrink-0 sm:py-2">
-              <input
-                type="checkbox"
-                checked={autoCopy}
-                onChange={(e) => setAutoCopy(e.target.checked)}
-                className="size-4 shrink-0 rounded border-border accent-primary"
-              />
-              <span className="select-none">Auto-copy latest</span>
-            </label>
-          </header>
+          <SessionAiPanel
+            open={aiOpen}
+            onOpenChange={setAiOpen}
+            latestItem={items[0] ?? null}
+          />
 
           {!hydrated ? (
-            <div className="flex flex-1 items-center justify-center py-12 text-sm text-muted-foreground">
+            <div
+              className="flex flex-1 items-center justify-center py-16 text-sm text-muted-foreground"
+              role="status"
+            >
               Loading inbox…
             </div>
           ) : items.length === 0 ? (
-            <div
-              className={cn(
-                panel,
-                "flex flex-1 flex-col items-center justify-center gap-4 px-4 py-12 text-center sm:px-6 sm:py-16"
-              )}
-            >
-              <div className="flex size-14 items-center justify-center rounded-2xl border border-border bg-surface-elevated">
-                <Clipboard
-                  className="size-7 text-muted-foreground/60"
-                  aria-hidden
-                />
-              </div>
-              <div className="max-w-sm space-y-2">
-                <p className="text-base font-medium text-foreground">
-                  Nothing here yet
-                </p>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  <button
-                    type="button"
-                    onClick={() => setComposeOpen(true)}
-                    className="font-medium text-primary underline-offset-2 touch-manipulation hover:underline"
-                  >
-                    Add to inbox
-                  </button>
-                  , scan{" "}
-                  <button
-                    type="button"
-                    onClick={() => setShowQr(true)}
-                    className="font-medium text-primary underline-offset-2 touch-manipulation hover:underline"
-                  >
-                    QR
-                  </button>{" "}
-                  to pair your phone, or send from the mobile page.
-                </p>
-              </div>
-            </div>
+            <InboxEmptyState
+              className="min-h-0 flex-1"
+              phoneLinked={phoneLinked}
+            />
           ) : (
             <ul
-              className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pb-safe [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
-              aria-label="Received clipboard items"
+              className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pb-safe [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
+              aria-label="Session clipboard items"
             >
               {items.map((item, index) => (
                 <ClipboardInboxItemCard
-                  key={item.id}
+                  key={`${item.id}-${item.at}`}
                   item={item}
                   isLatest={index === 0}
                   highlightCopy={autoCopiedId === item.id}
@@ -341,9 +344,34 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
                   currentDeviceFingerprint={session.deviceFingerprint}
                   onAssigneeChange={updateAssignee}
                   onCopy={() => void copyItem(item)}
+                  showAssignee={showAssignee}
                 />
               ))}
             </ul>
+          )}
+
+          {phoneLinked && (
+            <label
+              className={cn(
+                touchTarget,
+                "flex w-full shrink-0 cursor-pointer items-center gap-3 rounded-md border border-border bg-card px-3 py-2.5"
+              )}
+            >
+              <input
+                type="checkbox"
+                checked={autoCopy}
+                onChange={(e) => setAutoCopy(e.target.checked)}
+                className="size-4 shrink-0 rounded border-border accent-primary"
+              />
+              <span className="min-w-0 text-left">
+                <span className="block text-sm font-medium text-foreground">
+                  Auto-copy latest
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  Paste new phone items to your system clipboard
+                </span>
+              </span>
+            </label>
           )}
         </section>
       </main>
