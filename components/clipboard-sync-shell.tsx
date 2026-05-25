@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardCheck, Sparkles } from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ClipboardCompose } from "@/components/clipboard-compose";
@@ -8,9 +8,7 @@ import { ClipboardInboxItemCard } from "@/components/clipboard-inbox-item";
 import { HostPendingBanner } from "@/components/host-pending-banner";
 import { InboxEmptyState } from "@/components/inbox-empty-state";
 import { LeaveSessionDialog } from "@/components/leave-session-dialog";
-import { SessionAiPanel } from "@/components/session-ai-panel";
 import { SessionToolbar } from "@/components/session-toolbar";
-import { Button } from "@/components/ui/button";
 import { useClipboardP2p } from "@/hooks/use-clipboard-p2p";
 import { useClipboardRoomSync } from "@/hooks/use-clipboard-room-sync";
 import { useRoomMembers } from "@/hooks/use-room-members";
@@ -72,7 +70,6 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
   const [composeOpen, setComposeOpen] = useState(false);
   const [pairOpen, setPairOpen] = useState(false);
   const [participantsOpen, setParticipantsOpen] = useState(false);
-  const [aiOpen, setAiOpen] = useState(false);
 
   const { members, pendingMembers } = useRoomMembers(
     session.topic,
@@ -217,13 +214,13 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
     <div className="flex min-h-dvh min-w-0 flex-col overflow-x-hidden bg-background">
       <LeaveSessionDialog
         open={leaveOpen}
+        onOpenChange={setLeaveOpen}
         itemCount={items.length}
         onSave={() => {
           downloadClipboardItems(items, session.topic);
           onLeave();
         }}
         onErase={handleEraseLeave}
-        onCancel={() => setLeaveOpen(false)}
       />
 
       <SessionToolbar
@@ -272,9 +269,9 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
       >
         <section
           className={sessionInboxLayout}
-          aria-label="Session inbox"
+          aria-label="Session board"
         >
-          <div className="grid w-full min-w-0 shrink-0 grid-cols-1 gap-2 sm:grid-cols-[1fr_auto] sm:gap-2">
+          <div className="w-full min-w-0 shrink-0">
             <ClipboardCompose
               isHost={Boolean(session.isHost)}
               displayName={session.displayName}
@@ -301,27 +298,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
                 }
               }}
             />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className={cn(
-                touchTarget,
-                "h-11 w-full gap-1.5 px-3 sm:h-10 sm:w-auto"
-              )}
-              onClick={() => setAiOpen(true)}
-              aria-label="Local AI assist"
-            >
-              <Sparkles className="size-3.5 shrink-0" aria-hidden />
-              AI
-            </Button>
           </div>
-
-          <SessionAiPanel
-            open={aiOpen}
-            onOpenChange={setAiOpen}
-            latestItem={items[0] ?? null}
-          />
 
           {phoneLinked && (
             <label
@@ -352,7 +329,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
               className="flex flex-1 items-center justify-center py-16 text-sm text-muted-foreground"
               role="status"
             >
-              Loading inbox…
+              Loading board…
             </div>
           ) : items.length === 0 ? (
             <InboxEmptyState
@@ -362,7 +339,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
           ) : (
             <ul
               className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pb-safe [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
-              aria-label="Session clipboard items"
+              aria-label="Session board items"
             >
               {items.map((item, index) => (
                 <ClipboardInboxItemCard

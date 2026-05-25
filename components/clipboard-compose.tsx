@@ -121,7 +121,7 @@ export function ClipboardCompose({
           onClick={() => void openAndPaste()}
         >
           <ClipboardPaste className="size-3.5 shrink-0" aria-hidden />
-          Add to inbox
+          Add to board
         </Button>
       ) : (
         <div
@@ -132,7 +132,7 @@ export function ClipboardCompose({
         >
           <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
             <span className="text-xs font-medium text-muted-foreground">
-              Add to inbox
+              Add to board
             </span>
             <button
               type="button"
@@ -178,7 +178,7 @@ export function ClipboardCompose({
               onClick={handleAdd}
             >
               <Plus className="size-3.5 shrink-0" aria-hidden />
-              Save to inbox
+              Save to board
             </Button>
           </div>
         </div>

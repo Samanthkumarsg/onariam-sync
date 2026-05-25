@@ -14,12 +14,12 @@ const steps = [
   {
     step: "2",
     title: "Send from mobile",
-    body: "Paste or type there — items appear in this shared inbox for everyone in the session.",
+    body: "Paste or type there — items appear in this shared board for everyone in the session.",
   },
   {
     step: "3",
     title: "Add from this computer",
-    body: "Use Add to inbox below to paste from your desktop clipboard.",
+    body: "Use Add to board below to paste from your desktop clipboard.",
   },
 ] as const;
 
@@ -44,7 +44,7 @@ export function InboxEmptyState({ className, phoneLinked }: Props) {
         </div>
         <div className="min-w-0 space-y-1">
           <h2 className="text-base font-medium text-foreground sm:text-lg">
-            Your inbox is empty
+            Your board is empty
           </h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
             Shared with everyone approved in this session. Send from your phone

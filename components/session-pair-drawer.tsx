@@ -43,7 +43,7 @@ export function SessionPairDrawer({
           onCopySendLink={onCopySendLink}
           showSendUrl={showSendUrl}
           onToggleSendUrl={onToggleSendUrl}
-          className="border-0 shadow-none"
+          className="border-0 bg-background shadow-none"
         />
       </DrawerContent>
     </Drawer>

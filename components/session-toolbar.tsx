@@ -6,7 +6,7 @@ import { OnariamLogo } from "@/components/onariam-logo";
 import { ParticipantsMenu } from "@/components/participants-menu";
 import { SessionPairDrawer } from "@/components/session-pair-drawer";
 import type { RoomSession } from "@/lib/room-session";
-import { btnGhost, pageShell, touchTarget } from "@/lib/ui";
+import { pageShell, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -55,8 +55,9 @@ export function SessionToolbar({
               onClick={() => onPairOpenChange(true)}
               className={cn(
                 touchTarget,
-                "relative inline-flex size-10 items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:bg-surface-elevated hover:text-foreground sm:size-9",
-                phoneLinked && "border-accent-foreground/35 text-accent-foreground"
+                btnGhost,
+                "relative inline-flex size-10 items-center justify-center sm:size-9",
+                phoneLinked && "text-accent-foreground"
               )}
               aria-label={
                 phoneLinked ? "Phone linked — show QR" : "Link phone — show QR"

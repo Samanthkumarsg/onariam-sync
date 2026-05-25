@@ -216,7 +216,7 @@
   animation: compose-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* Inbox note — warm paper on canvas background */
+/* Board note — warm paper on canvas background */
 @layer components {
   .paper-card {
     position: relative;
