@@ -142,8 +142,9 @@ export default function SyncPage() {
 
   if (showProfileGate) {
     return (
-      <main className="flex min-h-dvh flex-col items-center justify-center p-4 sm:p-6">
+      <main className="flex min-h-dvh min-w-0 flex-col items-center justify-center overflow-x-hidden px-safe py-4 sm:px-6 sm:py-6">
         <JoinSessionProfile
+          className="w-full"
           code={code}
           title="Join session"
           subtitle="Pick your name and icon before entering the room."

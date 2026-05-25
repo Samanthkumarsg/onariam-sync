@@ -21,6 +21,12 @@ type Props = {
   latestItem?: ClipboardInboxItem | null;
 };
 
+function engineLabel(engine: ReturnType<typeof useWebAI>["engine"]) {
+  if (engine === "webai") return "WebAI (LLM)";
+  if (engine === "transformers") return "Transformers.js (summarizer)";
+  return null;
+}
+
 export function SessionAiPanel({ open, onOpenChange, latestItem }: Props) {
   const webai = useWebAI();
   const [output, setOutput] = useState("");
@@ -33,8 +39,10 @@ export function SessionAiPanel({ open, onOpenChange, latestItem }: Props) {
     if (!latestItem?.text?.trim() && !latestItem?.html) return;
     const snippet =
       latestItem.text.trim().slice(0, 2000) ||
-      latestItem.html?.replace(/<[^>]+>/g, " ").slice(0, 2000) ||
+      latestItem.html?.replace(/<[^>]+>/g, " ").trim().slice(0, 2000) ||
       "";
+    if (!snippet) return;
+
     void (async () => {
       setOutput("");
       const result = await webai.generate(
@@ -53,27 +61,25 @@ export function SessionAiPanel({ open, onOpenChange, latestItem }: Props) {
     onOpenChange(next);
   };
 
+  const label = engineLabel(webai.engine);
+
   return (
     <Drawer open={open} onOpenChange={handleClose}>
       <DrawerContent className="max-h-[min(85dvh,520px)]">
         <DrawerHeader className="text-left">
           <DrawerTitle className="flex items-center gap-2">
             <Sparkles className="size-4 text-primary" aria-hidden />
-            Local AI (WebAI)
+            Local AI
           </DrawerTitle>
           <DrawerDescription>
-            Runs in your browser via WebAI.js. Clipboard text never leaves this
-            device.
+            Summaries run on this device only — nothing is sent to Onariam servers.
+            {label ? ` Using ${label}.` : " First load may download a model (~50–800 MB)."}
           </DrawerDescription>
         </DrawerHeader>
 
         <div className="space-y-4 px-4 pb-6">
           {webai.status === "idle" && (
-            <Button
-              type="button"
-              className="w-full"
-              onClick={handleEnable}
-            >
+            <Button type="button" className="w-full" onClick={handleEnable}>
               Enable local AI
             </Button>
           )}
@@ -89,9 +95,17 @@ export function SessionAiPanel({ open, onOpenChange, latestItem }: Props) {
           )}
 
           {webai.error && (
-            <p className="text-sm text-destructive" role="alert">
-              {webai.error}
-            </p>
+            <div className="space-y-2" role="alert">
+              <p className="text-sm text-destructive">{webai.error}</p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => webai.retry()}
+              >
+                Try again
+              </Button>
+            </div>
           )}
 
           {(webai.isReady || webai.isGenerating) && (
@@ -114,8 +128,8 @@ export function SessionAiPanel({ open, onOpenChange, latestItem }: Props) {
                 size="sm"
                 onClick={() => webai.terminate()}
               >
-                <X className="size-3.5" aria-hidden />
-                Unload model
+                <X className="size-3.5 shrink-0" aria-hidden />
+                Unload
               </Button>
             </div>
           )}
@@ -129,6 +143,12 @@ export function SessionAiPanel({ open, onOpenChange, latestItem }: Props) {
               {output}
             </div>
           ) : null}
+
+          {!latestItem && webai.isReady && (
+            <p className="text-xs text-muted-foreground">
+              Add an inbox item first, then summarize it here.
+            </p>
+          )}
         </div>
       </DrawerContent>
     </Drawer>

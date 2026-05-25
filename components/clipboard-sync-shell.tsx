@@ -25,7 +25,7 @@ import {
 } from "@/lib/clipboard-inbox-storage";
 import { sendShareUrl } from "@/lib/meet-code";
 import type { RoomSession } from "@/lib/room-session";
-import { pageShell, stackLayout, touchTarget } from "@/lib/ui";
+import { pageShell, sessionInboxLayout, stackLayout, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -254,7 +254,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
 
       {autoCopiedId && (
         <div
-          className="pointer-events-none fixed bottom-safe left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-accent-foreground/30 bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground shadow-none"
+          className="pointer-events-none fixed bottom-safe left-1/2 z-50 mx-auto flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center justify-center gap-2 rounded-full border border-accent-foreground/30 bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground shadow-none"
           role="status"
         >
           <ClipboardCheck className="size-4 shrink-0" aria-hidden />
@@ -264,13 +264,17 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
 
       <main
         id="session-main"
-        className={cn(pageShell, stackLayout, "flex-1 py-4 sm:py-6 md:py-8")}
+        className={cn(
+          pageShell,
+          stackLayout,
+          "flex-1 py-3 sm:py-6 md:py-8"
+        )}
       >
         <section
-          className="flex min-h-0 flex-1 flex-col gap-4"
+          className={sessionInboxLayout}
           aria-label="Session inbox"
         >
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="grid w-full min-w-0 shrink-0 grid-cols-1 gap-2 sm:grid-cols-[1fr_auto] sm:gap-2">
             <ClipboardCompose
               isHost={Boolean(session.isHost)}
               displayName={session.displayName}
@@ -279,7 +283,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
               open={composeOpen}
               onOpenChange={setComposeOpen}
               showAssignee={showAssignee}
-              className="min-w-0 flex-1"
+              className="min-w-0 w-full"
               onAdd={(item) => {
                 addItem(item);
                 roomSync.publishUpsert(item);
@@ -301,7 +305,10 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
               type="button"
               variant="outline"
               size="sm"
-              className="h-9 shrink-0 gap-1.5 px-3"
+              className={cn(
+                touchTarget,
+                "h-11 w-full gap-1.5 px-3 sm:h-10 sm:w-auto"
+              )}
               onClick={() => setAiOpen(true)}
               aria-label="Local AI assist"
             >
@@ -315,6 +322,30 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
             onOpenChange={setAiOpen}
             latestItem={items[0] ?? null}
           />
+
+          {phoneLinked && (
+            <label
+              className={cn(
+                touchTarget,
+                "flex w-full shrink-0 cursor-pointer items-center gap-3 rounded-md border border-border bg-card px-3 py-2.5"
+              )}
+            >
+              <input
+                type="checkbox"
+                checked={autoCopy}
+                onChange={(e) => setAutoCopy(e.target.checked)}
+                className="size-4 shrink-0 rounded border-border accent-primary"
+              />
+              <span className="min-w-0 text-left">
+                <span className="block text-sm font-medium text-foreground">
+                  Auto-copy latest
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  Paste new phone items to your system clipboard
+                </span>
+              </span>
+            </label>
+          )}
 
           {!hydrated ? (
             <div
@@ -348,30 +379,6 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
                 />
               ))}
             </ul>
-          )}
-
-          {phoneLinked && (
-            <label
-              className={cn(
-                touchTarget,
-                "flex w-full shrink-0 cursor-pointer items-center gap-3 rounded-md border border-border bg-card px-3 py-2.5"
-              )}
-            >
-              <input
-                type="checkbox"
-                checked={autoCopy}
-                onChange={(e) => setAutoCopy(e.target.checked)}
-                className="size-4 shrink-0 rounded border-border accent-primary"
-              />
-              <span className="min-w-0 text-left">
-                <span className="block text-sm font-medium text-foreground">
-                  Auto-copy latest
-                </span>
-                <span className="block text-xs text-muted-foreground">
-                  Paste new phone items to your system clipboard
-                </span>
-              </span>
-            </label>
           )}
         </section>
       </main>

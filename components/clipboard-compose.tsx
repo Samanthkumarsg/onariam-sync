@@ -111,13 +111,13 @@ export function ClipboardCompose({
   const canAdd = draft.text.trim().length > 0;
 
   return (
-    <div className={cn("shrink-0", className)}>
+    <div className={cn("min-w-0 shrink-0", className)}>
       {!open ? (
         <Button
           type="button"
           variant="default"
           size="sm"
-          className="h-9 gap-1.5 px-3"
+          className={cn(touchTarget, "h-11 w-full gap-1.5 px-3 sm:h-9 sm:w-auto")}
           onClick={() => void openAndPaste()}
         >
           <ClipboardPaste className="size-3.5 shrink-0" aria-hidden />
@@ -173,7 +173,7 @@ export function ClipboardCompose({
             <Button
               type="button"
               size="sm"
-              className="h-9 w-full sm:w-auto sm:self-end"
+              className={cn(touchTarget, "h-11 w-full sm:h-9 sm:w-auto sm:self-end")}
               disabled={!canAdd}
               onClick={handleAdd}
             >

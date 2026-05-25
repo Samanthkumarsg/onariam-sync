@@ -44,18 +44,18 @@ export function SessionToolbar({
         <div
           className={cn(
             pageShell,
-            "flex min-h-14 items-center justify-between gap-2 py-2"
+            "flex min-h-14 min-w-0 items-center justify-between gap-2 py-2"
           )}
         >
-          <OnariamLogo size="sm" href="/" compact className="shrink-0" />
+          <OnariamLogo size="sm" href="/" compact className="min-w-0 shrink-0" />
 
-          <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+          <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-1.5">
             <button
               type="button"
               onClick={() => onPairOpenChange(true)}
               className={cn(
                 touchTarget,
-                "relative inline-flex size-9 items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:bg-surface-elevated hover:text-foreground",
+                "relative inline-flex size-10 items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:bg-surface-elevated hover:text-foreground sm:size-9",
                 phoneLinked && "border-accent-foreground/35 text-accent-foreground"
               )}
               aria-label={
@@ -80,7 +80,7 @@ export function SessionToolbar({
               isHost={session.isHost}
               open={participantsOpen}
               onOpenChange={onParticipantsOpenChange}
-              triggerClassName={cn(touchTarget, "h-9")}
+              triggerClassName={cn(touchTarget, "h-10 sm:h-9")}
             />
 
             <button
@@ -88,7 +88,7 @@ export function SessionToolbar({
               onClick={onLeave}
               className={cn(
                 touchTarget,
-                "inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:px-3"
+                "inline-flex size-10 items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:size-auto sm:h-9 sm:gap-1.5 sm:px-3 sm:text-sm sm:font-medium"
               )}
               aria-label="Leave session"
             >

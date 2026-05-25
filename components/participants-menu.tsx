@@ -235,7 +235,7 @@ export function ParticipantsMenu({
         onClick={() => setOpen(!open)}
         className={cn(
           btnGhost,
-          "inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-card/80 px-2.5 py-0",
+          "inline-flex h-10 items-center gap-1.5 rounded-lg border border-border bg-card/80 px-2.5 py-0 sm:h-9",
           "ring-1 ring-inset ring-white/[0.04]",
           open && "border-primary/30 bg-primary/10",
           isHost && pendingMembers.length > 0 && "border-amber-500/40",
@@ -275,7 +275,7 @@ export function ParticipantsMenu({
           className={cn(
             "z-50 overflow-hidden rounded-lg border border-border bg-card shadow-lg",
             "ring-1 ring-inset ring-white/[0.04]",
-            "fixed inset-x-3 top-[calc(3.75rem+env(safe-area-inset-top,0px))] max-h-[min(70dvh,24rem)] overflow-y-auto overscroll-contain",
+            "fixed inset-x-3 top-[calc(3.5rem+env(safe-area-inset-top,0px))] max-h-[min(70dvh,24rem)] overflow-y-auto overscroll-contain sm:inset-x-4",
             "sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-1.5 sm:w-72 sm:max-h-none sm:overflow-visible"
           )}
           role="listbox"

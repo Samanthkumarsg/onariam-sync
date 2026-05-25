@@ -168,7 +168,7 @@ export function ClipboardSender({ code }: Props) {
 
   if (!valid) {
     return (
-      <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-safe py-6 text-center">
+      <main className="flex min-h-dvh min-w-0 flex-col items-center justify-center gap-4 overflow-x-hidden px-safe py-6 text-center">
         <p className="text-sm text-destructive">Invalid session code.</p>
       </main>
     );
@@ -176,8 +176,9 @@ export function ClipboardSender({ code }: Props) {
 
   if (showProfileGate) {
     return (
-      <main className="flex min-h-dvh flex-col items-center justify-center px-safe py-6">
+      <main className="flex min-h-dvh min-w-0 flex-col items-center justify-center overflow-x-hidden px-safe py-6">
         <JoinSessionProfile
+          className="w-full"
           code={formatted}
           title="Join from phone"
           subtitle="Your name and icon appear in the session for the host."
@@ -204,7 +205,7 @@ export function ClipboardSender({ code }: Props) {
 
   if (joinError) {
     return (
-      <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-safe py-6 text-center">
+      <main className="flex min-h-dvh min-w-0 flex-col items-center justify-center gap-4 overflow-x-hidden px-safe py-6 text-center">
         <p className="text-sm text-destructive">{joinError}</p>
       </main>
     );
@@ -212,7 +213,7 @@ export function ClipboardSender({ code }: Props) {
 
   if (memberStatus === null) {
     return (
-      <main className="flex min-h-dvh items-center justify-center px-safe text-sm text-muted-foreground">
+      <main className="flex min-h-dvh min-w-0 items-center justify-center overflow-x-hidden px-safe text-sm text-muted-foreground">
         Joining session…
       </main>
     );
@@ -264,7 +265,13 @@ export function ClipboardSender({ code }: Props) {
         </div>
       </header>
 
-      <div className={cn(pageShell, stackLayout, "max-w-lg flex-1 py-4 sm:py-6")}>
+      <div
+        className={cn(
+          pageShell,
+          stackLayout,
+          "flex w-full min-w-0 max-w-lg flex-1 py-3 sm:py-6"
+        )}
+      >
         <div className="shrink-0 space-y-1 text-center">
           <p className="font-mono text-xs text-muted-foreground">{formatted}</p>
           <h1 className="text-base font-medium text-foreground">Send to desktop</h1>

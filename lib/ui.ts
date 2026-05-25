@@ -49,7 +49,11 @@ export const pageShell =
   "mx-auto w-full min-w-0 max-w-3xl px-safe sm:px-6";
 
 /** Vertical rhythm for session / form pages */
-export const stackLayout = "flex min-h-0 flex-1 flex-col gap-4 sm:gap-6";
+export const stackLayout = "flex min-h-0 flex-1 flex-col gap-3 sm:gap-6";
+
+/** Session inbox column: actions, optional footer, scrollable list */
+export const sessionInboxLayout =
+  "flex min-h-0 min-w-0 flex-1 flex-col gap-3 sm:gap-4";
 
 /** Minimum touch target (Fitts's law, WCAG 2.5.5) */
 export const touchTarget =

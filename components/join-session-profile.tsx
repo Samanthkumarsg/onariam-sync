@@ -36,6 +36,7 @@ type Props = {
   submitLabel?: string;
   busy?: boolean;
   error?: string | null;
+  className?: string;
   onBack?: () => void;
   onSubmit: (values: JoinProfileValues) => void | Promise<void>;
 };
@@ -79,6 +80,7 @@ export function JoinSessionProfile({
   submitLabel = "Join session",
   busy = false,
   error,
+  className,
   onBack,
   onSubmit,
 }: Props) {
@@ -133,7 +135,7 @@ export function JoinSessionProfile({
     stepDir === "fwd" ? "animate-lobby-step-in" : "animate-lobby-step-back";
 
   return (
-    <div className={cn(panel, "w-full max-w-md space-y-4 p-5 sm:p-6")}>
+    <div className={cn(panel, "w-full max-w-md space-y-4 p-4 sm:p-6", className)}>
       <div className="flex items-start gap-2">
         {onBack ? (
           <button
@@ -152,7 +154,7 @@ export function JoinSessionProfile({
           <p className="text-lg font-semibold tracking-tight text-foreground">
             {title}
           </p>
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
+          <p className="text-pretty text-sm text-muted-foreground">{subtitle}</p>
         </div>
         <span className="size-10 shrink-0" aria-hidden />
       </div>

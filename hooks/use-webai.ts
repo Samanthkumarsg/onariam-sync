@@ -2,7 +2,16 @@
 
 import { useCallback, useRef, useState } from "react";
 
-import { WEBAI_SESSION_MODEL_ID } from "@/lib/webai-config";
+import {
+  loadSummarizer,
+  resetSummarizer,
+  summarizeWithTransformers,
+} from "@/lib/local-ai-summarize";
+import {
+  createWebAIHandle,
+  formatWebAIError,
+  type LocalAiHandle,
+} from "@/lib/webai-client";
 
 export type WebAIStatus =
   | "idle"
@@ -11,89 +20,88 @@ export type WebAIStatus =
   | "generating"
   | "error";
 
-type WebAIInstance = {
-  generate: (data: {
-    userInput: { messages: { role: string; content: string }[] };
-  }) => Promise<unknown>;
-  generateStream?: (data: {
-    userInput: { messages: { role: string; content: string }[] };
-    onStream: (chunk: unknown) => void;
-  }) => Promise<void>;
-  terminate: () => void;
-};
+export type LocalAiEngine = "webai" | "transformers" | null;
 
-function extractGeneratedText(result: unknown): string {
-  if (typeof result === "string") return result.trim();
-  if (!result || typeof result !== "object") return "";
-  const r = result as Record<string, unknown>;
-  if (typeof r.text === "string") return r.text.trim();
-  if (typeof r.content === "string") return r.content.trim();
-  if (typeof r.output === "string") return r.output.trim();
-  const choices = r.choices;
-  if (Array.isArray(choices) && choices[0] && typeof choices[0] === "object") {
-    const msg = (choices[0] as { message?: { content?: string } }).message
-      ?.content;
-    if (typeof msg === "string") return msg.trim();
-  }
-  return "";
-}
-
-export function useWebAI(modelId = WEBAI_SESSION_MODEL_ID) {
-  const instanceRef = useRef<WebAIInstance | null>(null);
+export function useWebAI() {
+  const handleRef = useRef<LocalAiHandle | null>(null);
   const [status, setStatus] = useState<WebAIStatus>("idle");
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [engine, setEngine] = useState<LocalAiEngine>(null);
 
   const init = useCallback(async () => {
-    if (instanceRef.current) {
-      setStatus("ready");
-      return instanceRef.current;
-    }
-    setStatus("loading");
-    setError(null);
-    setProgress(0);
-    try {
-      const { WebAI } = await import("@axols/webai-js");
-      const webai = await WebAI.create({ modelId });
-      await webai.init({
-        mode: "auto",
-        onDownloadProgress: (p) => {
-          setProgress(Math.round(p.progress ?? 0));
-        },
-      });
-      instanceRef.current = webai as WebAIInstance;
-      setStatus("ready");
-      return instanceRef.current;
-    } catch (e) {
-      const message =
-        e instanceof Error ? e.message : "Could not load local AI";
-      setError(message);
+    if (typeof window === "undefined") {
+      setError("Local AI runs in the browser only");
       setStatus("error");
       return null;
     }
-  }, [modelId]);
+
+    if (handleRef.current) {
+      setEngine(handleRef.current.engine);
+      setStatus("ready");
+      return handleRef.current;
+    }
+
+    setStatus("loading");
+    setError(null);
+    setProgress(0);
+    setEngine(null);
+
+    try {
+      const handle = await createWebAIHandle(undefined, setProgress);
+      handleRef.current = handle;
+      setEngine("webai");
+      setStatus("ready");
+      return handle;
+    } catch (webaiError) {
+      console.warn("[WebAI] primary engine failed, using Transformers.js", webaiError);
+      try {
+        await loadSummarizer(setProgress);
+        handleRef.current = {
+          engine: "transformers",
+          async summarize(prompt: string) {
+            const userPart = prompt.includes("\n\n")
+              ? prompt.split("\n\n").pop() ?? prompt
+              : prompt;
+            return summarizeWithTransformers(userPart, setProgress);
+          },
+          terminate() {
+            resetSummarizer();
+          },
+        };
+        setEngine("transformers");
+        setStatus("ready");
+        setProgress(100);
+        return handleRef.current;
+      } catch (fallbackError) {
+        const message = formatWebAIError(webaiError || fallbackError);
+        setError(
+          message ||
+            "Could not load local AI. Check your connection and try again."
+        );
+        setStatus("error");
+        return null;
+      }
+    }
+  }, []);
 
   const generate = useCallback(
     async (prompt: string, system?: string) => {
-      const webai = instanceRef.current ?? (await init());
-      if (!webai) return null;
+      let handle = handleRef.current;
+      if (!handle) {
+        handle = (await init()) ?? null;
+      }
+      if (!handle) return null;
 
       setStatus("generating");
       setError(null);
-      const messages: { role: string; content: string }[] = [];
-      if (system?.trim()) {
-        messages.push({ role: "system", content: system.trim() });
-      }
-      messages.push({ role: "user", content: prompt });
 
       try {
-        const result = await webai.generate({ userInput: { messages } });
-        const text = extractGeneratedText(result);
+        const text = await handle.summarize(prompt, system);
         setStatus("ready");
         return text || null;
       } catch (e) {
-        const message =
-          e instanceof Error ? e.message : "Generation failed";
+        const message = formatWebAIError(e);
         setError(message);
         setStatus("error");
         return null;
@@ -103,19 +111,29 @@ export function useWebAI(modelId = WEBAI_SESSION_MODEL_ID) {
   );
 
   const terminate = useCallback(() => {
-    instanceRef.current?.terminate();
-    instanceRef.current = null;
+    handleRef.current?.terminate();
+    handleRef.current = null;
+    resetSummarizer();
     setStatus("idle");
     setProgress(0);
+    setEngine(null);
   }, []);
+
+  const retry = useCallback(() => {
+    terminate();
+    setError(null);
+    void init();
+  }, [init, terminate]);
 
   return {
     status,
     progress,
     error,
+    engine,
     init,
     generate,
     terminate,
+    retry,
     isReady: status === "ready",
     isLoading: status === "loading",
     isGenerating: status === "generating",

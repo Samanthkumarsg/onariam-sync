@@ -4,6 +4,8 @@ import type { RoomMember } from "@/lib/meetings";
 import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
 import { cn } from "@/lib/utils";
 
+const SCROLL_CHIP_THRESHOLD = 5;
+
 type Props = {
   members: RoomMember[];
   currentDeviceFingerprint: string;
@@ -21,6 +23,15 @@ function toAssignee(member: RoomMember): ClipboardAssignee {
   };
 }
 
+const chipClass = (selected: boolean) =>
+  cn(
+    "inline-flex min-h-9 items-center rounded-full border px-2.5 text-xs font-medium transition-all touch-manipulation sm:min-h-8",
+    "hover:border-border hover:bg-surface-elevated",
+    selected
+      ? "border-primary/50 bg-primary/15 text-primary"
+      : "border-border bg-card text-foreground"
+  );
+
 export function MemberTagPicker({
   members,
   currentDeviceFingerprint,
@@ -30,21 +41,57 @@ export function MemberTagPicker({
   className,
 }: Props) {
   const approved = members.filter((m) => m.status === "approved");
+  const useSelect = approved.length > SCROLL_CHIP_THRESHOLD;
+
+  if (useSelect) {
+    const selectValue = value?.deviceFingerprint ?? "";
+    return (
+      <div className={cn("space-y-1.5", className)}>
+        {label ? (
+          <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        ) : null}
+        <select
+          className={cn(
+            "h-11 w-full min-w-0 rounded-md border border-border bg-card px-3 text-sm text-foreground sm:h-10",
+            "touch-manipulation focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
+          )}
+          value={selectValue}
+          onChange={(e) => {
+            const fp = e.target.value;
+            if (!fp) {
+              onChange(null);
+              return;
+            }
+            const member = approved.find((m) => m.device_fingerprint === fp);
+            if (member) onChange(toAssignee(member));
+          }}
+          aria-label={label || "Assign to teammate"}
+        >
+          <option value="">Everyone</option>
+          {approved.map((member) => {
+            const isYou =
+              member.device_fingerprint === currentDeviceFingerprint;
+            return (
+              <option key={member.device_fingerprint} value={member.device_fingerprint}>
+                {isYou ? "You" : member.display_name}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+    );
+  }
 
   return (
-    <div className={cn("space-y-2", className)}>
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <div className="flex flex-wrap gap-1.5">
+    <div className={cn("space-y-1.5", className)}>
+      {label ? (
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      ) : null}
+      <div className="chip-scroll-row">
         <button
           type="button"
           onClick={() => onChange(null)}
-          className={cn(
-            "inline-flex min-h-8 items-center rounded-full border px-2.5 text-xs font-medium transition-all touch-manipulation",
-            "hover:border-border hover:bg-surface-elevated",
-            value == null
-              ? "border-primary/50 bg-primary/15 text-primary scale-[1.02]"
-              : "border-border bg-card text-muted-foreground"
-          )}
+          className={chipClass(value == null)}
         >
           Everyone
         </button>
@@ -58,13 +105,7 @@ export function MemberTagPicker({
               key={member.device_fingerprint}
               type="button"
               onClick={() => onChange(toAssignee(member))}
-              className={cn(
-                "inline-flex min-h-8 max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition-all touch-manipulation",
-                "hover:border-border hover:bg-surface-elevated",
-                selected
-                  ? "border-primary/50 bg-primary/15 text-primary scale-[1.02] shadow-sm shadow-primary/10"
-                  : "border-border bg-card text-foreground"
-              )}
+              className={cn(chipClass(selected), "max-w-[10rem] gap-1 py-0.5")}
               title={member.display_name}
             >
               <span className="text-sm leading-none" aria-hidden>

@@ -122,7 +122,7 @@ export function ClipboardEditor({
         className
       )}
     >
-      <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-card/60 px-1 py-1 sm:px-1.5">
+      <div className="chip-scroll-row flex flex-nowrap items-center gap-0.5 border-b border-border bg-card/60 px-1 py-1 sm:flex-wrap sm:px-1.5">
         <ToolbarButton
           label="Bold"
           disabled={disabled}

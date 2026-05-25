@@ -50,13 +50,13 @@ export function ClipboardInboxItemCard({
     <li
       className={cn(
         paperCard,
-        "relative z-0 flex flex-col gap-2.5 p-3.5 sm:p-4",
+        "relative z-0 flex min-w-0 flex-col gap-2.5 p-3 sm:p-4",
         isLatest && "paper-card--latest z-[1]",
         highlightCopy && "paper-card--highlight"
       )}
       aria-label={copied ? "Clipboard item, copied" : "Clipboard item"}
     >
-      <div className="relative z-[1] flex items-start gap-2.5">
+      <div className="relative z-[1] flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:gap-2.5">
         {item.html ? (
           <div
             className={cn(
@@ -75,7 +75,7 @@ export function ClipboardInboxItemCard({
           type="button"
           variant="outline"
           size="sm"
-          className="h-8 shrink-0 gap-1 border-[#e5e1d8] bg-[#fdfcfa]/90 px-2.5 shadow-none hover:bg-white/90"
+          className="h-10 shrink-0 gap-1 self-end border-[#e5e1d8] bg-[#fdfcfa]/90 px-3 shadow-none hover:bg-white/90 sm:h-8 sm:px-2.5"
           aria-label={copied ? "Copy again" : "Copy to clipboard"}
           onClick={onCopy}
         >
@@ -137,7 +137,7 @@ export function ClipboardInboxItemCard({
           value={assignee}
           onChange={(next) => onAssigneeChange(item.id, next)}
           label=""
-          className="relative z-[1] space-y-0 [&>p:first-child]:hidden [&_button]:min-h-7 [&_button]:border-[#e5e1d8] [&_button]:bg-[#fdfcfa]/80"
+          className="relative z-[1] min-w-0 space-y-0 [&>p:first-child]:hidden"
         />
       )}
     </li>
