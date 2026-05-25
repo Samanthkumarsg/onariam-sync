@@ -6,7 +6,7 @@ import { OnariamLogo } from "@/components/onariam-logo";
 import { ParticipantsMenu } from "@/components/participants-menu";
 import { SessionPairDrawer } from "@/components/session-pair-drawer";
 import type { RoomSession } from "@/lib/room-session";
-import { pageShell, touchTarget } from "@/lib/ui";
+import { btnGhost, pageShell, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 type Props = {

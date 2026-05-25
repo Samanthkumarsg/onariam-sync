@@ -43,11 +43,11 @@ export function SessionPairHero({
         </p>
       </div>
 
-      <div className="w-full max-w-[min(100%,280px)] rounded-lg border border-border bg-background p-4">
+      <div className="w-full max-w-[min(100%,280px)]">
         <QrDisplay
           url={sendUrl}
           size={220}
-          className="mx-auto w-full max-w-[220px] rounded-md"
+          className="mx-auto w-full max-w-[220px]"
         />
       </div>
 
