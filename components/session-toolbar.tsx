@@ -6,7 +6,7 @@ import { OnariamLogo } from "@/components/onariam-logo";
 import { ParticipantsMenu } from "@/components/participants-menu";
 import { SessionPairDrawer } from "@/components/session-pair-drawer";
 import type { RoomSession } from "@/lib/room-session";
-import { pageShell, touchTarget } from "@/lib/ui";
+import { pageShell, toolbarControl, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -40,7 +40,7 @@ export function SessionToolbar({
 }: Props) {
   return (
     <>
-      <header className="sticky top-0 z-40 shrink-0 border-b border-border bg-background/95 pt-safe backdrop-blur-md supports-backdrop-filter:bg-background/90">
+      <header className="sticky top-0 z-40 shrink-0 border-b border-border bg-card pt-safe">
         <div
           className={cn(
             pageShell,
@@ -49,15 +49,15 @@ export function SessionToolbar({
         >
           <OnariamLogo size="sm" href="/" compact className="min-w-0 shrink-0" />
 
-          <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-1.5">
+          <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={() => onPairOpenChange(true)}
               className={cn(
                 touchTarget,
-                btnGhost,
-                "relative inline-flex size-10 items-center justify-center sm:size-9",
-                phoneLinked && "text-accent-foreground"
+                toolbarControl,
+                "relative size-10 sm:size-9",
+                phoneLinked && "border-foreground/20 text-foreground"
               )}
               aria-label={
                 phoneLinked ? "Phone linked — show QR" : "Link phone — show QR"
@@ -67,7 +67,7 @@ export function SessionToolbar({
               <QrCode className="size-4 shrink-0" aria-hidden />
               {phoneLinked && (
                 <span
-                  className="absolute right-1 top-1 size-1.5 rounded-full bg-accent-foreground"
+                  className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-action"
                   aria-hidden
                 />
               )}
@@ -89,7 +89,8 @@ export function SessionToolbar({
               onClick={onLeave}
               className={cn(
                 touchTarget,
-                "inline-flex size-10 items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:size-auto sm:h-9 sm:gap-1.5 sm:px-3 sm:text-sm sm:font-medium"
+                toolbarControl,
+                "size-10 hover:bg-destructive/10 hover:text-destructive sm:size-auto sm:h-9 sm:gap-1.5 sm:px-3 sm:text-sm sm:font-medium"
               )}
               aria-label="Leave session"
             >

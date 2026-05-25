@@ -75,7 +75,7 @@ export function ClipboardInboxItemCard({
           type="button"
           variant="outline"
           size="sm"
-          className="h-10 shrink-0 gap-1 self-end border-[#e5e1d8] bg-[#fdfcfa]/90 px-3 shadow-none hover:bg-white/90 sm:h-8 sm:px-2.5"
+          className="h-10 shrink-0 gap-1 self-end sm:h-8 sm:px-2.5"
           aria-label={copied ? "Copy again" : "Copy to clipboard"}
           onClick={onCopy}
         >

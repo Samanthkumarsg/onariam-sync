@@ -31,7 +31,7 @@ export function LeaveSessionDialog({
 }: Props) {
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="bg-background">
+      <DrawerContent className="bg-card">
         <DrawerHeader className="text-left">
           <DrawerTitle>Leave session?</DrawerTitle>
           <DrawerDescription>
@@ -45,6 +45,7 @@ export function LeaveSessionDialog({
           {itemCount > 0 && (
             <Button
               type="button"
+              variant="secondary"
               className={cn(touchTarget, "h-11 w-full")}
               onClick={onSave}
             >

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/** Cohere design primitives — see DESIGN.md */
+/** Cohere / Cursor-web design primitives — see DESIGN.md */
 
 export const eyebrow =
   "font-mono text-xs font-normal uppercase tracking-[0.28px] text-muted-foreground";
@@ -12,33 +12,39 @@ export const subhead = "text-sm leading-relaxed text-ink-muted";
 
 export const label = "text-sm text-muted-foreground";
 
+/** White card on gray canvas (Cursor settings / composer panels) */
 export const panel = cn(
-  "rounded-lg border border-border bg-card",
-  "p-4 sm:p-6",
+  "rounded-xl border border-border bg-card",
+  "p-4 sm:p-5",
   "shadow-none"
 );
 
-/** Warm note on canvas — see globals.css `.paper-card` */
-export const paperCard = "paper-card rounded-lg";
+export const paperCard = "paper-card rounded-xl";
 
 export const popover = cn(
-  "rounded-lg border border-border bg-popover shadow-none"
+  "rounded-xl border border-border bg-popover shadow-none"
 );
 
 export const input = cn(
-  "h-11 w-full min-w-0 rounded-md border border-border bg-input px-3.5 text-base text-foreground sm:h-10 sm:text-sm",
+  "h-11 w-full min-w-0 rounded-lg border border-border bg-input px-3.5 text-base text-foreground sm:h-10 sm:text-sm",
   "placeholder:text-muted-foreground",
   "transition-colors outline-none",
   "focus:border-[#9b60aa] focus:ring-2 focus:ring-[#9b60aa]/25"
 );
 
 export const btnGhost = cn(
-  "rounded-md px-2 py-1 text-xs font-medium text-muted-foreground",
+  "rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground",
+  "transition-colors hover:bg-surface-elevated hover:text-foreground"
+);
+
+/** Header / toolbar icon control — light fill, subtle border */
+export const toolbarControl = cn(
+  "inline-flex items-center justify-center rounded-lg border border-border bg-card text-muted-foreground",
   "transition-colors hover:bg-surface-elevated hover:text-foreground"
 );
 
 export const chip = cn(
-  "inline-flex max-w-full items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1",
+  "inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1",
   "font-mono text-[13px] text-foreground"
 );
 
@@ -49,7 +55,7 @@ export const pageShell =
   "mx-auto w-full min-w-0 max-w-3xl px-safe sm:px-6";
 
 /** Vertical rhythm for session / form pages */
-export const stackLayout = "flex min-h-0 flex-1 flex-col gap-3 sm:gap-6";
+export const stackLayout = "flex min-h-0 flex-1 flex-col gap-3 sm:gap-4";
 
 /** Session board column: actions, optional footer, scrollable list */
 export const sessionInboxLayout =

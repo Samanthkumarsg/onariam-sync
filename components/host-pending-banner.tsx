@@ -16,7 +16,7 @@ export function HostPendingBanner({ count, onReview, className }: Props) {
   return (
     <div
       className={cn(
-        "border-b border-amber-500/30 bg-amber-500/10",
+        "border-b border-border bg-card",
         className
       )}
       role="status"

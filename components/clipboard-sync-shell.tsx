@@ -251,7 +251,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
 
       {autoCopiedId && (
         <div
-          className="pointer-events-none fixed bottom-safe left-1/2 z-50 mx-auto flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center justify-center gap-2 rounded-full border border-accent-foreground/30 bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground shadow-none"
+          className="pointer-events-none fixed bottom-safe left-1/2 z-50 mx-auto flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center justify-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-none"
           role="status"
         >
           <ClipboardCheck className="size-4 shrink-0" aria-hidden />
@@ -304,7 +304,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
             <label
               className={cn(
                 touchTarget,
-                "flex w-full shrink-0 cursor-pointer items-center gap-3 rounded-md border border-border bg-card px-3 py-2.5"
+                "flex w-full shrink-0 cursor-pointer items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5"
               )}
             >
               <input

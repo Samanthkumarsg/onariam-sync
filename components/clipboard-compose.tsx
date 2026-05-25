@@ -14,7 +14,7 @@ import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
 import { createClipboardPayload } from "@/lib/clipboard-p2p";
 import type { ClipboardInboxItem } from "@/lib/clipboard-inbox-storage";
 import type { RoomMember } from "@/lib/meetings";
-import { touchTarget } from "@/lib/ui";
+import { panel, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -121,7 +121,7 @@ export function ClipboardCompose({
           onClick={() => void openAndPaste()}
         >
           <ClipboardPaste className="size-3.5 shrink-0" aria-hidden />
-          Add to board
+          Add to inbox
         </Button>
       ) : (
         <div
@@ -132,7 +132,7 @@ export function ClipboardCompose({
         >
           <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
             <span className="text-xs font-medium text-muted-foreground">
-              Add to board
+              Add to inbox
             </span>
             <button
               type="button"
@@ -178,7 +178,7 @@ export function ClipboardCompose({
               onClick={handleAdd}
             >
               <Plus className="size-3.5 shrink-0" aria-hidden />
-              Save to board
+              Save to inbox
             </Button>
           </div>
         </div>

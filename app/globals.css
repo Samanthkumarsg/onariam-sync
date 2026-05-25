@@ -216,68 +216,28 @@
   animation: compose-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* Board note — warm paper on canvas background */
+/* Board note cards — Cursor web: white surfaces on gray canvas */
 @layer components {
   .paper-card {
     position: relative;
     overflow: hidden;
-    border: 1px solid #e5e1d8;
-    background: linear-gradient(
-      168deg,
-      #fdfcfa 0%,
-      #f7f5f0 42%,
-      #eeece7 100%
-    );
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.85),
-      0 1px 2px rgba(23, 23, 28, 0.05),
-      0 3px 10px rgba(23, 23, 28, 0.05),
-      0 10px 28px -8px rgba(23, 23, 28, 0.07);
-  }
-
-  .paper-card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0.35;
-    background-image: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 27px,
-      rgba(23, 23, 28, 0.04) 27px,
-      rgba(23, 23, 28, 0.04) 28px
-    );
-  }
-
-  .paper-card::after {
-    content: "";
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 14px 0 0 14px;
-    border-color: transparent transparent transparent #d9d4c8;
-    box-shadow: -1px -1px 2px rgba(23, 23, 28, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   }
 
   .paper-card--latest {
-    border-color: #d4cec2;
+    border-color: color-mix(in srgb, var(--border) 70%, #171717 30%);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      0 2px 4px rgba(23, 23, 28, 0.06),
-      0 6px 16px rgba(23, 23, 28, 0.07),
-      0 14px 32px -10px rgba(23, 23, 28, 0.1);
+      0 1px 2px rgba(0, 0, 0, 0.05),
+      0 4px 12px rgba(0, 0, 0, 0.06);
   }
 
   .paper-card--highlight {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      0 0 0 2px color-mix(in srgb, #003c33 18%, transparent),
-      0 3px 10px rgba(23, 23, 28, 0.06),
-      0 10px 28px -8px rgba(23, 23, 28, 0.08);
+      0 0 0 2px color-mix(in srgb, var(--action) 22%, transparent),
+      0 1px 2px rgba(0, 0, 0, 0.05);
   }
 }
 

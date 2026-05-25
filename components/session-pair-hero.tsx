@@ -28,7 +28,7 @@ export function SessionPairHero({
     <section
       className={cn(
         panel,
-        "flex flex-col items-center gap-4 p-4 sm:gap-5 sm:p-6",
+        "flex flex-col items-center gap-4 border-0 p-4 sm:gap-5 sm:p-6",
         className
       )}
       aria-labelledby="pair-phone-heading"
@@ -43,11 +43,11 @@ export function SessionPairHero({
         </p>
       </div>
 
-      <div className="w-full max-w-[min(100%,280px)]">
+      <div className="w-full max-w-[min(100%,280px)] rounded-lg border border-border bg-background p-4">
         <QrDisplay
           url={sendUrl}
           size={220}
-          className="mx-auto w-full max-w-[220px]"
+          className="mx-auto w-full max-w-[220px] rounded-md"
         />
       </div>
 
