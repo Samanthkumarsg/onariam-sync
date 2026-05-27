@@ -298,25 +298,25 @@ export function ClipboardSender({ code }: Props) {
         <div
           className={cn(
             panel,
-            "flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-0"
+            "flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-0 sm:overflow-visible"
           )}
         >
-          <p className="shrink-0 px-3 pt-3 text-sm font-medium sm:px-4 sm:pt-4">
-            Paste or type
-          </p>
-          <div className="min-h-0 flex-1 px-3 sm:px-4">
-            <ClipboardEditor
-              key={editorKey}
-              initialContent={editorSeed}
-              placeholder="Links, notes, codes…"
-              minHeightClassName="min-h-[min(12rem,40dvh)] sm:min-h-[200px]"
-              onChange={setDraft}
-              onPasteFromClipboard={() => void pasteFromSystem()}
-              disabled={p2p.status !== "connected" || !ready}
-            />
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-3 pt-3 sm:overflow-visible sm:px-4 sm:pt-4">
+            <p className="shrink-0 text-sm font-medium">Paste or type</p>
+            <div className="min-h-0 shrink-0 pb-2">
+              <ClipboardEditor
+                key={editorKey}
+                initialContent={editorSeed}
+                placeholder="Links, notes, codes…"
+                minHeightClassName="min-h-[min(12rem,40dvh)] sm:min-h-[200px]"
+                onChange={setDraft}
+                onPasteFromClipboard={() => void pasteFromSystem()}
+                disabled={p2p.status !== "connected" || !ready}
+              />
+            </div>
           </div>
 
-          <div className="sticky bottom-0 shrink-0 border-t border-border bg-card px-3 pb-safe pt-3 sm:static sm:border-0 sm:bg-transparent sm:px-4 sm:pb-0">
+          <div className="sticky bottom-0 z-10 shrink-0 border-t border-border bg-card px-3 pb-safe pt-3 sm:static sm:z-auto sm:border-0 sm:bg-transparent sm:px-4 sm:pb-0">
             <div className="flex flex-col gap-2">
               <Button
                 type="button"

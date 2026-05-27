@@ -516,6 +516,13 @@
 
 @media (prefers-reduced-motion: reduce) {
 
+  .compose-panel-in,
+  .compose-panel-in-active {
+    opacity: 1;
+    transform: none;
+    animation: none !important;
+  }
+
   .animate-lobby-pop,
   .animate-lobby-step-in,
   .animate-lobby-step-back,

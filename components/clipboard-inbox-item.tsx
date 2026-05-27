@@ -5,6 +5,7 @@ import { Check, ClipboardCheck, Copy, Smartphone } from "lucide-react";
 import { MemberTagPicker } from "@/components/member-tag-picker";
 import { Button } from "@/components/ui/button";
 import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
+import { hasRichHtmlContent } from "@/lib/clipboard-html";
 import type { ClipboardInboxItem } from "@/lib/clipboard-inbox-storage";
 import type { RoomMember } from "@/lib/meetings";
 import { paperCard } from "@/lib/ui";
@@ -43,6 +44,7 @@ export function ClipboardInboxItemCard({
   const from = sourceLabel(item);
   const copied = item.copiedToClipboard;
   const assignee = item.assignee;
+  const richHtml = hasRichHtmlContent(item.html);
   const canAssign =
     showAssignee && members.length > 0 && Boolean(onAssigneeChange);
 
@@ -57,14 +59,14 @@ export function ClipboardInboxItemCard({
       aria-label={copied ? "Clipboard item, copied" : "Clipboard item"}
     >
       <div className="relative z-[1] flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:gap-2.5">
-        {item.html ? (
+        {richHtml ? (
           <div
             className={cn(
               "clipboard-rich min-w-0 flex-1 line-clamp-3 font-[family-name:var(--font-display)] text-sm leading-relaxed text-foreground",
               "[&_p]:mb-1 [&_p:last-child]:mb-0",
               "[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-4"
             )}
-            dangerouslySetInnerHTML={{ __html: item.html }}
+            dangerouslySetInnerHTML={{ __html: item.html! }}
           />
         ) : (
           <p className="min-w-0 flex-1 line-clamp-3 whitespace-pre-wrap break-words font-[family-name:var(--font-display)] text-sm leading-relaxed text-foreground">

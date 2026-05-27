@@ -19,3 +19,9 @@ export function plainTextFromHtml(html: string): string {
 export function isEmptyEditorHtml(html: string): boolean {
   return plainTextFromHtml(html).length === 0;
 }
+
+/** True when HTML carries visible rich content (not an empty TipTap doc). */
+export function hasRichHtmlContent(html: string | undefined): boolean {
+  if (!html?.trim()) return false;
+  return !isEmptyEditorHtml(html);
+}

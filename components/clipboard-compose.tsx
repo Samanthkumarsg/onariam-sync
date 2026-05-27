@@ -108,7 +108,8 @@ export function ClipboardCompose({
     setOpen(false);
   };
 
-  const canAdd = draft.text.trim().length > 0;
+  const canAdd =
+    draft.text.trim().length > 0 || !isEmptyEditorHtml(draft.html);
 
   return (
     <div className={cn("min-w-0 shrink-0", className)}>

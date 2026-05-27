@@ -361,7 +361,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
             />
           ) : (
             <ul
-              className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pb-safe [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
+              className="flex min-h-[min(12rem,35dvh)] flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pb-safe [-webkit-overflow-scrolling:touch] [scrollbar-width:thin] sm:min-h-0"
               aria-label="Session clipboard items"
             >
               {items.map((item, index) => (
