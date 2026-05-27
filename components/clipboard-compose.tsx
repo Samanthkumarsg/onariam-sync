@@ -150,7 +150,7 @@ export function ClipboardCompose({
 
           <div
             id={panelId}
-            className="compose-panel-in compose-panel-in-active flex flex-col gap-2.5 px-3 pb-3 pt-2.5 sm:gap-3 sm:px-3.5 sm:pb-3.5"
+            className="compose-panel-in-active flex flex-col gap-2.5 px-3 pb-3 pt-2.5 sm:gap-3 sm:px-3.5 sm:pb-3.5"
           >
             <ClipboardEditor
               key={editorKey}

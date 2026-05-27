@@ -40,16 +40,16 @@ export function SessionToolbar({
 }: Props) {
   return (
     <>
-      <header className="sticky top-0 z-40 shrink-0 border-b border-border bg-background/95 pt-safe backdrop-blur-md supports-backdrop-filter:bg-background/90">
+      <header className="sticky top-0 z-40 shrink-0 border-b border-border bg-background pt-safe isolate sm:bg-background/95 sm:backdrop-blur-md sm:supports-backdrop-filter:bg-background/90">
         <div
           className={cn(
             pageShell,
-            "flex min-h-14 min-w-0 items-center justify-between gap-2 py-2"
+            "flex min-h-14 w-full min-w-0 items-center gap-2 py-2"
           )}
         >
-          <OnariamLogo size="sm" href="/" compact className="min-w-0 shrink-0" />
+          <OnariamLogo size="sm" href="/" className="min-w-0 shrink" />
 
-          <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-1.5">
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
             <button
               type="button"
               onClick={() => onPairOpenChange(true)}

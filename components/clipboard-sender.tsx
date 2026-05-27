@@ -258,7 +258,7 @@ export function ClipboardSender({ code }: Props) {
           : "Send to browser";
 
   return (
-    <div className="flex min-h-dvh min-w-0 flex-col overflow-x-hidden bg-background">
+    <div className="flex h-dvh min-h-0 min-w-0 flex-col overflow-hidden bg-background">
       <header className="shrink-0 border-b border-border pt-safe">
         <div className="flex items-center justify-center px-safe py-3 sm:py-4">
           <OnariamLogo href={null} size="sm" />
@@ -269,7 +269,7 @@ export function ClipboardSender({ code }: Props) {
         className={cn(
           pageShell,
           stackLayout,
-          "flex w-full min-w-0 max-w-lg flex-1 py-3 sm:py-6"
+          "flex min-h-0 w-full min-w-0 max-w-lg flex-1 overflow-y-auto overscroll-y-contain py-3 sm:py-6"
         )}
       >
         <div className="shrink-0 space-y-1 text-center">

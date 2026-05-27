@@ -207,13 +207,11 @@
   }
 }
 
-.compose-panel-in {
-  opacity: 0;
-  transform: translateY(-6px);
-}
-
-.compose-panel-in-active {
-  animation: compose-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+/* Avoid opacity: 0 on the base class — mobile browsers may skip the animation and hide content */
+@media (prefers-reduced-motion: no-preference) {
+  .compose-panel-in-active {
+    animation: compose-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
 }
 
 /* Inbox note — warm paper on canvas background */
@@ -239,6 +237,7 @@
     content: "";
     position: absolute;
     inset: 0;
+    z-index: 0;
     pointer-events: none;
     opacity: 0.35;
     background-image: repeating-linear-gradient(
@@ -255,12 +254,14 @@
     position: absolute;
     right: 0;
     bottom: 0;
+    z-index: 0;
     width: 0;
     height: 0;
     border-style: solid;
     border-width: 14px 0 0 14px;
     border-color: transparent transparent transparent #d9d4c8;
     box-shadow: -1px -1px 2px rgba(23, 23, 28, 0.05);
+    pointer-events: none;
   }
 
   .paper-card--latest {
@@ -516,10 +517,7 @@
 
 @media (prefers-reduced-motion: reduce) {
 
-  .compose-panel-in,
   .compose-panel-in-active {
-    opacity: 1;
-    transform: none;
     animation: none !important;
   }
 

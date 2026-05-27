@@ -214,7 +214,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
   };
 
   return (
-    <div className="flex min-h-dvh min-w-0 flex-col overflow-x-hidden bg-background">
+    <div className="flex h-dvh min-h-0 min-w-0 flex-col overflow-hidden bg-background">
       <LeaveSessionDialog
         open={leaveOpen}
         itemCount={items.length}
@@ -267,7 +267,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
         className={cn(
           pageShell,
           stackLayout,
-          "flex-1 py-3 sm:py-6 md:py-8"
+          "min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain py-3 sm:py-6 md:py-8"
         )}
       >
         <section
@@ -349,19 +349,16 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
 
           {!hydrated ? (
             <div
-              className="flex flex-1 items-center justify-center py-16 text-sm text-muted-foreground"
+              className="flex items-center justify-center py-16 text-sm text-muted-foreground"
               role="status"
             >
               Loading inbox…
             </div>
           ) : items.length === 0 ? (
-            <InboxEmptyState
-              className="min-h-0 flex-1"
-              phoneLinked={phoneLinked}
-            />
+            <InboxEmptyState phoneLinked={phoneLinked} />
           ) : (
             <ul
-              className="flex min-h-[min(12rem,35dvh)] flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pb-safe [-webkit-overflow-scrolling:touch] [scrollbar-width:thin] sm:min-h-0"
+              className="flex min-h-0 flex-col gap-2 pb-safe"
               aria-label="Session clipboard items"
             >
               {items.map((item, index) => (

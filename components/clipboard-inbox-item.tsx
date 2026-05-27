@@ -52,7 +52,7 @@ export function ClipboardInboxItemCard({
     <li
       className={cn(
         paperCard,
-        "relative z-0 flex min-w-0 flex-col gap-2.5 p-3 sm:p-4",
+        "relative isolate z-0 flex min-w-0 flex-col gap-2.5 p-3 sm:p-4",
         isLatest && "paper-card--latest z-[1]",
         highlightCopy && "paper-card--highlight"
       )}
