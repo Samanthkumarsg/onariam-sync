@@ -330,11 +330,6 @@ export function RoomLobby() {
       >
         <header className="flex flex-col items-center gap-2 text-center">
           <OnariamLogo href={null} />
-          {view === "home" && (
-            <p className="text-sm text-muted-foreground">
-              Paste from phone to browser — peer-to-peer.
-            </p>
-          )}
         </header>
 
         <div
@@ -365,11 +360,10 @@ export function RoomLobby() {
             >
               <div className="space-y-1 text-center">
                 <h1 className="text-lg font-medium text-foreground">
-                  Sync clipboard across devices
+                  Paste from phone to browser
                 </h1>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  Host a session or join with a code. Phone to browser,
-                  peer-to-peer.
+                <p className="text-sm text-muted-foreground">
+                  Start a session or join with a code.
                 </p>
               </div>
               <Button
@@ -385,7 +379,7 @@ export function RoomLobby() {
                 className={cn(homeCtaHover, "h-12 w-full text-base")}
                 size="lg"
               >
-                Start sync
+                Start session
               </Button>
               <Button
                 type="button"
@@ -451,7 +445,7 @@ export function RoomLobby() {
                       Pick your emoji
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Shown in the session header.
+                      Shown next to your name in the session.
                     </p>
                   </div>
                   <AvatarPicker
@@ -466,7 +460,7 @@ export function RoomLobby() {
                     disabled={busy}
                     onClick={() => void handleStart()}
                   >
-                    Start sync
+                    Start session
                   </Button>
                 </div>
               )}
@@ -477,8 +471,8 @@ export function RoomLobby() {
           {view === "join" && (
             <JoinSessionProfile
               title="Join with code"
-              subtitle="Enter the code, your name, and an icon for the session."
-              submitLabel="Continue to session"
+              subtitle="Name and icon for this session."
+              submitLabel="Enter session"
               busy={busy}
               error={error}
               onBack={() => {

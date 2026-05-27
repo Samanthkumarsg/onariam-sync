@@ -1,14 +1,16 @@
 "use client";
 
-import { Lock, Link2 } from "lucide-react";
+import { Link2, Lock } from "lucide-react";
 
 import { QrDisplay } from "@/components/qr-display";
 import { Button } from "@/components/ui/button";
+import { formatMeetCode } from "@/lib/meet-code";
 import { panel, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 type Props = {
   sendUrl: string;
+  topic?: string;
   copiedSendLink: boolean;
   onCopySendLink: () => void;
   showSendUrl: boolean;
@@ -18,12 +20,20 @@ type Props = {
 
 export function SessionPairHero({
   sendUrl,
+  topic,
   copiedSendLink,
   onCopySendLink,
   showSendUrl,
   onToggleSendUrl,
   className,
 }: Props) {
+  const codeMatch = sendUrl.match(/\/send\/([a-z0-9-]+)/i);
+  const code = topic
+    ? formatMeetCode(topic)
+    : codeMatch
+      ? formatMeetCode(codeMatch[1])
+      : null;
+
   return (
     <section
       className={cn(
@@ -37,11 +47,19 @@ export function SessionPairHero({
         <h2 id="pair-phone-heading" className="text-lg font-medium text-foreground">
           Link your phone
         </h2>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          Scan to open the send page, then paste on your phone. Text arrives here
-          over a direct connection.
+        <p className="text-sm text-muted-foreground">
+          Scan or copy the link — then paste on your phone.
         </p>
       </div>
+
+      {code && (
+        <p
+          className="font-mono text-lg tracking-[0.12em] text-foreground"
+          aria-label={`Session code ${code}`}
+        >
+          {code}
+        </p>
+      )}
 
       <div className="w-full max-w-[min(100%,280px)] rounded-lg border border-border bg-background p-4">
         <QrDisplay
@@ -51,20 +69,14 @@ export function SessionPairHero({
         />
       </div>
 
-      <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-        <Lock className="size-3.5 shrink-0" aria-hidden />
-        Direct to this browser. Not stored on our servers.
-      </p>
-
       <div className="flex w-full max-w-sm flex-col gap-2">
         <Button
           type="button"
-          variant="outline"
           className={cn(touchTarget, "h-11 w-full gap-2")}
           onClick={onCopySendLink}
         >
           <Link2 className="size-4 shrink-0" aria-hidden />
-          {copiedSendLink ? "Send link copied" : "Copy link for phone"}
+          {copiedSendLink ? "Link copied" : "Copy link for phone"}
         </Button>
         <button
           type="button"
@@ -74,7 +86,7 @@ export function SessionPairHero({
             "text-sm font-medium text-action underline-offset-2 hover:underline"
           )}
         >
-          {showSendUrl ? "Hide send link" : "Show send link"}
+          {showSendUrl ? "Hide link" : "Show link"}
         </button>
         {showSendUrl && (
           <p className="rounded-md border border-border bg-surface-elevated px-3 py-2.5 font-mono text-xs leading-snug text-muted-foreground break-all">
@@ -82,6 +94,11 @@ export function SessionPairHero({
           </p>
         )}
       </div>
+
+      <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+        <Lock className="size-3.5 shrink-0" aria-hidden />
+        Peer-to-peer · not stored on our servers
+      </p>
     </section>
   );
 }

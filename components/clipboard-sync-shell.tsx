@@ -310,10 +310,10 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
                 "h-11 w-full gap-1.5 px-3 sm:h-10 sm:w-auto"
               )}
               onClick={() => setAiOpen(true)}
-              aria-label="Local AI assist"
+              aria-label="Summarize latest inbox note"
             >
               <Sparkles className="size-3.5 shrink-0" aria-hidden />
-              AI
+              Summarize
             </Button>
           </div>
 
@@ -338,10 +338,10 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
               />
               <span className="min-w-0 text-left">
                 <span className="block text-sm font-medium text-foreground">
-                  Auto-copy latest
+                  Auto-copy new items
                 </span>
                 <span className="block text-xs text-muted-foreground">
-                  Paste new phone items to your system clipboard
+                  Latest phone paste goes to your system clipboard
                 </span>
               </span>
             </label>
@@ -355,7 +355,19 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
               Loading inbox…
             </div>
           ) : items.length === 0 ? (
-            <InboxEmptyState phoneLinked={phoneLinked} />
+            <InboxEmptyState
+              phoneLinked={phoneLinked}
+              topic={session.topic}
+              sendUrl={sendUrl}
+              copiedSendLink={copiedSendLink}
+              onCopySendLink={() => {
+                void navigator.clipboard.writeText(sendUrl);
+                setCopiedSendLink(true);
+                setTimeout(() => setCopiedSendLink(false), 1500);
+              }}
+              showSendUrl={showSendUrl}
+              onToggleSendUrl={() => setShowSendUrl((v) => !v)}
+            />
           ) : (
             <ul
               className="flex min-h-0 flex-col gap-2 pb-safe"

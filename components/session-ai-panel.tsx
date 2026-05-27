@@ -22,9 +22,18 @@ type Props = {
 };
 
 function engineLabel(engine: ReturnType<typeof useWebAI>["engine"]) {
-  if (engine === "webai") return "WebAI (LLM)";
-  if (engine === "transformers") return "Transformers.js (summarizer)";
+  if (engine === "edge") return "Microsoft Edge built-in AI";
+  if (engine === "webai") return "WebAI (local LLM)";
+  if (engine === "transformers") return "on-device summarizer";
   return null;
+}
+
+function loadHint(ai: ReturnType<typeof useWebAI>) {
+  if (ai.engine) return null;
+  if (ai.skipsWebAiLlm) {
+    return " On phones we use a lightweight summarizer (~100 MB), not the full LLM.";
+  }
+  return " First load may download a model (~50–400 MB).";
 }
 
 export function SessionAiPanel({ open, onOpenChange, latestItem }: Props) {
@@ -69,18 +78,19 @@ export function SessionAiPanel({ open, onOpenChange, latestItem }: Props) {
         <DrawerHeader className="text-left">
           <DrawerTitle className="flex items-center gap-2">
             <Sparkles className="size-4 text-primary" aria-hidden />
-            Local AI
+            Summarize
           </DrawerTitle>
           <DrawerDescription>
-            Summaries run on this device only — nothing is sent to Onariam servers.
-            {label ? ` Using ${label}.` : " First load may download a model (~50–800 MB)."}
+            Runs on this device only. Optional — does not affect send or copy.
+            {label ? ` ${label}.` : null}
+            {loadHint(webai)}
           </DrawerDescription>
         </DrawerHeader>
 
         <div className="space-y-4 px-4 pb-6">
           {webai.status === "idle" && (
             <Button type="button" className="w-full" onClick={handleEnable}>
-              Enable local AI
+              Enable summarizer
             </Button>
           )}
 
@@ -120,7 +130,7 @@ export function SessionAiPanel({ open, onOpenChange, latestItem }: Props) {
                 {webai.isGenerating ? (
                   <Loader2 className="size-3.5 animate-spin" aria-hidden />
                 ) : null}
-                Summarize latest note
+                Summarize latest
               </Button>
               <Button
                 type="button"

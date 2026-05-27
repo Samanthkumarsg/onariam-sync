@@ -1,79 +1,116 @@
 "use client";
 
-import { Clipboard } from "lucide-react";
+import { Link2, Lock, Smartphone } from "lucide-react";
 
-import { panel } from "@/lib/ui";
+import { QrDisplay } from "@/components/qr-display";
+import { Button } from "@/components/ui/button";
+import { formatMeetCode } from "@/lib/meet-code";
+import { panel, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
-
-const steps = [
-  {
-    step: "1",
-    title: "Link your phone",
-    body: "Tap the QR icon in the header to open the send page on your phone.",
-  },
-  {
-    step: "2",
-    title: "Send from mobile",
-    body: "Paste or type there — items appear in this shared inbox for everyone in the session.",
-  },
-  {
-    step: "3",
-    title: "Add from this computer",
-    body: "Use Add to inbox below to paste from your desktop clipboard.",
-  },
-] as const;
 
 type Props = {
   className?: string;
   phoneLinked?: boolean;
+  topic: string;
+  sendUrl: string;
+  copiedSendLink?: boolean;
+  onCopySendLink?: () => void;
+  showSendUrl?: boolean;
+  onToggleSendUrl?: () => void;
 };
 
-export function InboxEmptyState({ className, phoneLinked }: Props) {
-  const stepsToShow = phoneLinked
-    ? steps.filter((s) => s.step !== "1")
-    : steps;
+export function InboxEmptyState({
+  className,
+  phoneLinked,
+  topic,
+  sendUrl,
+  copiedSendLink = false,
+  onCopySendLink,
+  showSendUrl = false,
+  onToggleSendUrl,
+}: Props) {
+  const code = formatMeetCode(topic);
 
   return (
-    <div className={cn(panel, "flex flex-col gap-5 sm:gap-6", className)}>
-      <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:text-left">
-        <div
-          className="flex size-12 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-elevated"
-          aria-hidden
+    <div
+      className={cn(
+        panel,
+        "flex flex-col items-center gap-4 p-4 sm:gap-5 sm:p-6",
+        className
+      )}
+      aria-labelledby="empty-inbox-heading"
+    >
+      <div className="w-full max-w-sm space-y-1 text-center">
+        <h2
+          id="empty-inbox-heading"
+          className="text-base font-medium text-foreground sm:text-lg"
         >
-          <Clipboard className="size-6 text-muted-foreground" />
-        </div>
-        <div className="min-w-0 space-y-1">
-          <h2 className="text-base font-medium text-foreground sm:text-lg">
-            Your inbox is empty
-          </h2>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            Shared with everyone approved in this session. Send from your phone
-            or add from this browser.
-          </p>
-        </div>
+          {phoneLinked ? "Ready to receive" : "Link your phone"}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {phoneLinked
+            ? "Paste on your phone or use Add to inbox on this device."
+            : "Scan the QR or copy the link — then paste on your phone."}
+        </p>
       </div>
 
-      <ol className="grid gap-2 sm:gap-3" aria-label="How to get started">
-        {stepsToShow.map((item, index) => (
-          <li
-            key={item.step}
-            className="flex min-w-0 gap-3 rounded-md border border-border/80 bg-background p-3 sm:p-3.5"
+      <p
+        className="font-mono text-lg tracking-[0.12em] text-foreground"
+        aria-label={`Session code ${code}`}
+      >
+        {code}
+      </p>
+
+      <div className="w-full max-w-[min(100%,240px)] rounded-lg border border-border bg-background p-3 sm:max-w-[260px] sm:p-4">
+        <QrDisplay
+          url={sendUrl}
+          size={200}
+          className="mx-auto w-full max-w-[200px] rounded-md sm:max-w-[220px]"
+        />
+      </div>
+
+      {onCopySendLink && (
+        <div className="flex w-full max-w-sm flex-col gap-2">
+          <Button
+            type="button"
+            variant={phoneLinked ? "outline" : "default"}
+            className={cn(touchTarget, "h-11 w-full gap-2")}
+            onClick={onCopySendLink}
           >
-            <span
-              className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted font-mono text-xs text-muted-foreground"
-              aria-hidden
+            <Link2 className="size-4 shrink-0" aria-hidden />
+            {copiedSendLink ? "Link copied" : "Copy link for phone"}
+          </Button>
+          {onToggleSendUrl && (
+            <button
+              type="button"
+              onClick={onToggleSendUrl}
+              className={cn(
+                touchTarget,
+                "text-sm font-medium text-action underline-offset-2 hover:underline"
+              )}
             >
-              {phoneLinked ? index + 1 : item.step}
-            </span>
-            <div className="min-w-0 space-y-0.5">
-              <p className="text-sm font-medium text-foreground">{item.title}</p>
-              <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                {item.body}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ol>
+              {showSendUrl ? "Hide link" : "Show link"}
+            </button>
+          )}
+          {showSendUrl && (
+            <p className="rounded-md border border-border bg-surface-elevated px-3 py-2.5 text-left font-mono text-xs leading-snug text-muted-foreground break-all">
+              {sendUrl}
+            </p>
+          )}
+        </div>
+      )}
+
+      {phoneLinked ? (
+        <p className="flex max-w-sm items-center justify-center gap-1.5 text-center text-xs text-accent-foreground">
+          <Smartphone className="size-3.5 shrink-0" aria-hidden />
+          Phone connected — send when ready
+        </p>
+      ) : (
+        <p className="flex max-w-sm items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+          <Lock className="size-3.5 shrink-0" aria-hidden />
+          Peer-to-peer · not stored on our servers
+        </p>
+      )}
     </div>
   );
 }

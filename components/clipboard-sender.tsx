@@ -180,8 +180,8 @@ export function ClipboardSender({ code }: Props) {
         <JoinSessionProfile
           className="w-full"
           code={formatted}
-          title="Join from phone"
-          subtitle="Your name and icon appear in the session for the host."
+          title="Send from phone"
+          subtitle="Name and icon for this session."
           submitLabel="Continue"
           onSubmit={({ name, avatarId: picked }) => {
             if (!deviceId) return;
@@ -238,15 +238,15 @@ export function ClipboardSender({ code }: Props) {
       ? sendState === "copied"
         ? "Copied on desktop"
         : sendState === "delivered"
-          ? "Delivered to desktop"
+          ? "Delivered"
           : sendState === "sent"
             ? "Sent"
-            : "Connected — send to desktop"
+            : "Ready — paste and send"
       : p2p.status === "connecting"
-        ? "Connecting to desktop…"
+        ? "Connecting…"
         : p2p.status === "failed"
           ? (p2p.error ?? "Connection failed")
-          : "Desktop not linked — open the sync page on your computer, then send";
+          : "Open the sync page on your computer first";
 
   const sendLabel =
     sendState === "copied"
@@ -287,12 +287,6 @@ export function ClipboardSender({ code }: Props) {
           >
             {statusText}
           </p>
-          {sendState === "copied" && (
-            <p className="mt-1 flex items-center justify-center gap-1 text-xs text-accent-foreground">
-              <Check className="size-3.5 shrink-0" aria-hidden />
-              Desktop copied to clipboard
-            </p>
-          )}
         </div>
 
         <div
@@ -340,11 +334,6 @@ export function ClipboardSender({ code }: Props) {
             </div>
           </div>
         </div>
-
-        <p className="shrink-0 py-4 text-center text-xs leading-relaxed text-muted-foreground pb-safe">
-          Transfers go directly to your computer (peer-to-peer). Nothing is saved
-          on our servers.
-        </p>
       </div>
     </div>
   );
