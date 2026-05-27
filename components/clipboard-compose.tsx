@@ -1,7 +1,7 @@
 "use client";
 
 import { ClipboardPaste, Plus, X } from "lucide-react";
-import { useCallback, useId, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 
 import {
   ClipboardEditor,
@@ -24,6 +24,8 @@ type Props = {
   members: RoomMember[];
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Increment to open the panel and paste from the system clipboard. */
+  pasteTrigger?: number;
   onAdd: (item: ClipboardInboxItem) => void;
   onBroadcast?: (item: ClipboardInboxItem) => void;
   showAssignee?: boolean;
@@ -37,6 +39,7 @@ export function ClipboardCompose({
   members,
   open: openControlled,
   onOpenChange,
+  pasteTrigger,
   onAdd,
   onBroadcast,
   showAssignee = true,
@@ -77,6 +80,11 @@ export function ClipboardCompose({
     setOpen(true);
     await pasteFromSystem();
   }, [pasteFromSystem, setOpen]);
+
+  useEffect(() => {
+    if (!pasteTrigger) return;
+    void openAndPaste();
+  }, [pasteTrigger, openAndPaste]);
 
   const resetEditor = () => {
     setDraft({ html: "", text: "" });

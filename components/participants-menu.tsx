@@ -30,6 +30,8 @@ type Props = {
   isHost?: boolean;
   /** Match toolbar control height (e.g. h-9) */
   triggerClassName?: string;
+  /** When true, only the list panel is shown (e.g. opened from the mobile dock). */
+  hideTrigger?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 };
@@ -162,6 +164,7 @@ export function ParticipantsMenu({
   currentDeviceKind = "desktop",
   isHost = false,
   triggerClassName,
+  hideTrigger = false,
   open: openControlled,
   onOpenChange,
 }: Props) {
@@ -229,7 +232,14 @@ export function ParticipantsMenu({
   };
 
   return (
-    <div ref={rootRef} className="relative shrink-0">
+    <div
+      ref={rootRef}
+      className={cn(
+        "relative shrink-0",
+        hideTrigger && "pointer-events-none fixed inset-0 z-50 sm:hidden"
+      )}
+    >
+      {!hideTrigger && (
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -269,13 +279,16 @@ export function ParticipantsMenu({
           aria-hidden
         />
       </button>
+      )}
 
       {open && (
         <div
           className={cn(
             "z-50 overflow-hidden rounded-lg border border-border bg-card shadow-lg",
             "ring-1 ring-inset ring-white/[0.04]",
-            "fixed inset-x-3 top-[calc(3.5rem+env(safe-area-inset-top,0px))] max-h-[min(70dvh,24rem)] overflow-y-auto overscroll-contain sm:inset-x-4",
+            hideTrigger
+              ? "pointer-events-auto fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] max-h-[min(55dvh,20rem)] overflow-y-auto overscroll-contain"
+              : "fixed inset-x-3 top-[calc(3.5rem+env(safe-area-inset-top,0px))] max-h-[min(70dvh,24rem)] overflow-y-auto overscroll-contain sm:inset-x-4",
             "sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-1.5 sm:w-72 sm:max-h-none sm:overflow-visible"
           )}
           role="listbox"

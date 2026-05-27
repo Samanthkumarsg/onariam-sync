@@ -9,6 +9,7 @@ import { HostPendingBanner } from "@/components/host-pending-banner";
 import { InboxEmptyState } from "@/components/inbox-empty-state";
 import { LeaveSessionDialog } from "@/components/leave-session-dialog";
 import { SessionAiPanel } from "@/components/session-ai-panel";
+import { SessionMobileMenu } from "@/components/session-mobile-menu";
 import { SessionToolbar } from "@/components/session-toolbar";
 import { Button } from "@/components/ui/button";
 import { useClipboardP2p } from "@/hooks/use-clipboard-p2p";
@@ -23,7 +24,7 @@ import {
   mergeClipboardItem,
   type ClipboardInboxItem,
 } from "@/lib/clipboard-inbox-storage";
-import { sendShareUrl } from "@/lib/meet-code";
+import { meetShareUrl, sendShareUrl } from "@/lib/meet-code";
 import type { RoomSession } from "@/lib/room-session";
 import { pageShell, sessionInboxLayout, stackLayout, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
@@ -60,12 +61,18 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
     () => sendShareUrl(session.topic),
     [session.topic]
   );
+  const inviteUrl = useMemo(
+    () => meetShareUrl(session.topic),
+    [session.topic]
+  );
 
   const [items, setItems] = useState<ClipboardInboxItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [autoCopiedId, setAutoCopiedId] = useState<string | null>(null);
   const [copiedSendLink, setCopiedSendLink] = useState(false);
+  const [copiedInvite, setCopiedInvite] = useState(false);
+  const [composePasteTrigger, setComposePasteTrigger] = useState(0);
   const [showSendUrl, setShowSendUrl] = useState(false);
   const [autoCopy, setAutoCopy] = useState(true);
   const [leaveOpen, setLeaveOpen] = useState(false);
@@ -254,7 +261,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
 
       {autoCopiedId && (
         <div
-          className="pointer-events-none fixed bottom-safe left-1/2 z-50 mx-auto flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center justify-center gap-2 rounded-full border border-accent-foreground/30 bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground shadow-none"
+          className="pointer-events-none fixed bottom-24 left-1/2 z-50 mx-auto flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center justify-center gap-2 rounded-full border border-accent-foreground/30 bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground shadow-none sm:bottom-safe"
           role="status"
         >
           <ClipboardCheck className="size-4 shrink-0" aria-hidden />
@@ -267,7 +274,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
         className={cn(
           pageShell,
           stackLayout,
-          "min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain py-3 sm:py-6 md:py-8"
+          "min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain py-3 pb-24 sm:pb-6 sm:py-6 md:py-8"
         )}
       >
         <section
@@ -282,8 +289,12 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
               members={members}
               open={composeOpen}
               onOpenChange={setComposeOpen}
+              pasteTrigger={composePasteTrigger}
               showAssignee={showAssignee}
-              className="min-w-0 w-full"
+              className={cn(
+                "min-w-0 w-full",
+                !composeOpen && "hidden sm:block"
+              )}
               onAdd={(item) => {
                 addItem(item);
                 roomSync.publishUpsert(item);
@@ -307,7 +318,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
               size="sm"
               className={cn(
                 touchTarget,
-                "h-11 w-full gap-1.5 px-3 sm:h-10 sm:w-auto"
+                "hidden h-11 w-full gap-1.5 px-3 sm:flex sm:h-10 sm:w-auto"
               )}
               onClick={() => setAiOpen(true)}
               aria-label="Summarize latest inbox note"
@@ -391,6 +402,33 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
           )}
         </section>
       </main>
+
+      <SessionMobileMenu
+        phoneLinked={phoneLinked}
+        pendingCount={session.isHost ? pendingMembers.length : 0}
+        onAdd={() => {
+          setComposeOpen(true);
+          setComposePasteTrigger((n) => n + 1);
+        }}
+        onPair={() => setPairOpen(true)}
+        onParticipants={() => setParticipantsOpen(true)}
+        onSummarize={() => setAiOpen(true)}
+        onLeave={requestLeave}
+        copiedInvite={copiedInvite}
+        onCopyInvite={() => {
+          void navigator.clipboard.writeText(inviteUrl);
+          setCopiedInvite(true);
+          setTimeout(() => setCopiedInvite(false), 1500);
+        }}
+        copiedSendLink={copiedSendLink}
+        onCopySendLink={() => {
+          void navigator.clipboard.writeText(sendUrl);
+          setCopiedSendLink(true);
+          setTimeout(() => setCopiedSendLink(false), 1500);
+        }}
+        showSendUrl={showSendUrl}
+        onToggleSendUrl={() => setShowSendUrl((v) => !v)}
+      />
     </div>
   );
 }

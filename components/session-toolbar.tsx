@@ -49,7 +49,7 @@ export function SessionToolbar({
         >
           <OnariamLogo size="sm" href="/" className="min-w-0 shrink" />
 
-          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
+          <div className="ml-auto hidden shrink-0 items-center gap-1 sm:flex sm:gap-1.5">
             <button
               type="button"
               onClick={() => onPairOpenChange(true)}
@@ -98,6 +98,17 @@ export function SessionToolbar({
           </div>
         </div>
       </header>
+
+      <ParticipantsMenu
+        topic={session.topic}
+        deviceFingerprint={session.deviceFingerprint}
+        currentDeviceFingerprint={session.deviceFingerprint}
+        currentDeviceKind="desktop"
+        isHost={session.isHost}
+        hideTrigger
+        open={participantsOpen}
+        onOpenChange={onParticipantsOpenChange}
+      />
 
       <SessionPairDrawer
         open={pairOpen}
