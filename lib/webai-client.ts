@@ -1,12 +1,15 @@
 /** Browser-only WebAI.js wrapper with safer init and response parsing. */
 
-import { WEBAI_SESSION_MODEL_ID } from "@/lib/webai-config";
+import type { LocalAiHandle } from "@/lib/local-ai-handle";
+import { WEBAI_SESSION_MODEL_ID_SMALL } from "@/lib/webai-config";
 
-const WEBAI_PRIORITIES = [
-  { mode: "webai" as const, precision: "q4" as const, device: "webgpu" as const },
-  { mode: "webai" as const, precision: "q4" as const, device: "wasm" as const },
-  { mode: "webai" as const, precision: "q8" as const, device: "wasm" as const },
-];
+export function isWebAIConfigurationError(error: unknown): boolean {
+  const msg = formatWebAIError(error).toLowerCase();
+  return (
+    msg.includes("priorities list") ||
+    (msg.includes("configurations") && msg.includes("mode, precision, device"))
+  );
+}
 
 export type WebAIModule = typeof import("@axols/webai-js");
 
@@ -52,32 +55,35 @@ export async function loadWebAIModule(): Promise<WebAIModule> {
   return import("@axols/webai-js");
 }
 
-export type LocalAiHandle = {
-  engine: "webai" | "transformers";
-  summarize: (prompt: string, system?: string) => Promise<string>;
-  terminate: () => void;
-};
+async function initWebAI(
+  webai: Awaited<ReturnType<Awaited<ReturnType<typeof loadWebAIModule>>["WebAI"]["create"]>>,
+  onDownloadProgress?: (pct: number) => void
+) {
+  const progress = (p: { progress?: number }) => {
+    onDownloadProgress?.(Math.round(p.progress ?? 0));
+  };
+
+  try {
+    await webai.init({ mode: "auto", onDownloadProgress: progress });
+  } catch (autoError) {
+    if (!isWebAIConfigurationError(autoError)) throw autoError;
+    await webai.init({
+      mode: "webai",
+      device: "wasm",
+      precision: "q4",
+      onDownloadProgress: progress,
+    });
+  }
+}
 
 export async function createWebAIHandle(
-  modelId = WEBAI_SESSION_MODEL_ID,
+  modelId = WEBAI_SESSION_MODEL_ID_SMALL,
   onDownloadProgress?: (pct: number) => void
 ): Promise<LocalAiHandle> {
-  const { WebAI, checkIsWebGPUAvailable } = await loadWebAIModule();
-
-  const webgpu = await checkIsWebGPUAvailable();
-  if (!webgpu) {
-    console.warn("[WebAI] WebGPU unavailable; using WASM fallback");
-  }
-
+  const { WebAI } = await loadWebAIModule();
   const webai = await WebAI.create({ modelId });
 
-  await webai.init({
-    mode: "auto",
-    priorities: WEBAI_PRIORITIES,
-    onDownloadProgress: (p) => {
-      onDownloadProgress?.(Math.round(p.progress ?? 0));
-    },
-  });
+  await initWebAI(webai, onDownloadProgress);
 
   return {
     engine: "webai",
@@ -88,15 +94,24 @@ export async function createWebAIHandle(
       }
       messages.push({ role: "user", content: prompt });
 
-      const result = await webai.generate({
-        userInput: { messages },
-      });
+      try {
+        const result = await webai.generate({
+          userInput: { messages },
+        });
 
-      const text = extractWebAIResult(result);
-      if (!text) {
-        throw new Error("Model returned an empty response");
+        const text = extractWebAIResult(result);
+        if (!text) {
+          throw new Error("Model returned an empty response");
+        }
+        return text;
+      } catch (generateError) {
+        if (isWebAIConfigurationError(generateError)) {
+          throw new Error(
+            "WebAI could not run on this device. Reload and use the on-device summarizer."
+          );
+        }
+        throw generateError;
       }
-      return text;
     },
     terminate() {
       webai.terminate();

@@ -1,5 +1,8 @@
-/** Lightweight summarization via Transformers.js (browser-only fallback). */
+/** Lightweight summarization via Transformers.js (works on mobile + all browsers). */
 
+import { isMobileDevice } from "@/lib/ai-device";
+import type { LocalAiHandle } from "@/lib/local-ai-handle";
+import { extractUserPrompt } from "@/lib/local-ai-handle";
 import { formatWebAIError } from "@/lib/webai-client";
 
 const SUMMARIZER_MODEL = "Xenova/distilbart-cnn-12-6";
@@ -23,6 +26,11 @@ export async function loadSummarizer(
       const { pipeline, env } = await import("@huggingface/transformers");
       env.allowLocalModels = false;
       env.useBrowserCache = true;
+
+      if (isMobileDevice() && env.backends.onnx.wasm) {
+        env.backends.onnx.wasm.numThreads = 1;
+        env.backends.onnx.wasm.proxy = true;
+      }
 
       onProgress?.(5);
 
@@ -69,4 +77,20 @@ export async function summarizeWithTransformers(
 
 export function resetSummarizer() {
   pipelinePromise = null;
+}
+
+export async function createTransformersHandle(
+  onProgress?: (pct: number) => void
+): Promise<LocalAiHandle> {
+  await loadSummarizer(onProgress);
+
+  return {
+    engine: "transformers",
+    async summarize(prompt: string) {
+      return summarizeWithTransformers(extractUserPrompt(prompt), onProgress);
+    },
+    terminate() {
+      resetSummarizer();
+    },
+  };
 }

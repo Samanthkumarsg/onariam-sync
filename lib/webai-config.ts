@@ -1,5 +1,5 @@
-/** Primary WebAI.js model (falls back to Transformers.js summarizer if this fails). */
-export const WEBAI_SESSION_MODEL_ID = "llama-3.2-1b-instruct";
-
-/** Smaller WebAI model — swap in webai-config if the 1B build fails on your device. */
+/** Desktop WebAI model (smaller; mobile skips WebAI entirely). */
 export const WEBAI_SESSION_MODEL_ID_SMALL = "smollm2-360m-instruct";
+
+/** Larger WebAI model — opt-in only; too heavy for most devices. */
+export const WEBAI_SESSION_MODEL_ID = "llama-3.2-1b-instruct";

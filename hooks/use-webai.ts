@@ -2,15 +2,16 @@
 
 import { useCallback, useRef, useState } from "react";
 
+import { createLocalAiHandle } from "@/lib/ai-init";
+import { shouldSkipWebAI } from "@/lib/ai-device";
+import type { LocalAiEngine, LocalAiHandle } from "@/lib/local-ai-handle";
 import {
-  loadSummarizer,
+  createTransformersHandle,
   resetSummarizer,
-  summarizeWithTransformers,
 } from "@/lib/local-ai-summarize";
 import {
-  createWebAIHandle,
   formatWebAIError,
-  type LocalAiHandle,
+  isWebAIConfigurationError,
 } from "@/lib/webai-client";
 
 export type WebAIStatus =
@@ -20,14 +21,14 @@ export type WebAIStatus =
   | "generating"
   | "error";
 
-export type LocalAiEngine = "webai" | "transformers" | null;
+export type { LocalAiEngine };
 
 export function useWebAI() {
   const handleRef = useRef<LocalAiHandle | null>(null);
   const [status, setStatus] = useState<WebAIStatus>("idle");
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [engine, setEngine] = useState<LocalAiEngine>(null);
+  const [engine, setEngine] = useState<LocalAiEngine | null>(null);
 
   const init = useCallback(async () => {
     if (typeof window === "undefined") {
@@ -48,40 +49,22 @@ export function useWebAI() {
     setEngine(null);
 
     try {
-      const handle = await createWebAIHandle(undefined, setProgress);
+      const handle = await createLocalAiHandle(setProgress);
       handleRef.current = handle;
-      setEngine("webai");
+      setEngine(handle.engine);
       setStatus("ready");
+      setProgress(100);
       return handle;
-    } catch (webaiError) {
-      console.warn("[WebAI] primary engine failed, using Transformers.js", webaiError);
-      try {
-        await loadSummarizer(setProgress);
-        handleRef.current = {
-          engine: "transformers",
-          async summarize(prompt: string) {
-            const userPart = prompt.includes("\n\n")
-              ? prompt.split("\n\n").pop() ?? prompt
-              : prompt;
-            return summarizeWithTransformers(userPart, setProgress);
-          },
-          terminate() {
-            resetSummarizer();
-          },
-        };
-        setEngine("transformers");
-        setStatus("ready");
-        setProgress(100);
-        return handleRef.current;
-      } catch (fallbackError) {
-        const message = formatWebAIError(webaiError || fallbackError);
-        setError(
-          message ||
-            "Could not load local AI. Check your connection and try again."
-        );
-        setStatus("error");
-        return null;
-      }
+    } catch (e) {
+      const message = formatWebAIError(e);
+      setError(
+        message ||
+          (shouldSkipWebAI()
+            ? "Could not load the on-device summarizer. Try Wi‑Fi and reload."
+            : "Could not load local AI. Check your connection and try again.")
+      );
+      setStatus("error");
+      return null;
     }
   }, []);
 
@@ -101,6 +84,28 @@ export function useWebAI() {
         setStatus("ready");
         return text || null;
       } catch (e) {
+        if (
+          handle.engine === "webai" &&
+          isWebAIConfigurationError(e)
+        ) {
+          handle.terminate();
+          handleRef.current = null;
+          try {
+            const fallback = await createTransformersHandle(setProgress);
+            handleRef.current = fallback;
+            setEngine("transformers");
+            const text = await fallback.summarize(prompt, system);
+            setStatus("ready");
+            setProgress(100);
+            return text || null;
+          } catch (fallbackError) {
+            const message = formatWebAIError(fallbackError);
+            setError(message);
+            setStatus("error");
+            return null;
+          }
+        }
+
         const message = formatWebAIError(e);
         setError(message);
         setStatus("error");
@@ -137,5 +142,6 @@ export function useWebAI() {
     isReady: status === "ready",
     isLoading: status === "loading",
     isGenerating: status === "generating",
+    skipsWebAiLlm: shouldSkipWebAI(),
   };
 }
