@@ -1,3 +1,7 @@
+# Agent notes
+
+- Product UX: see [UX.md](./UX.md) (Onariam Sync principles, adapted from ChatGPT Apps SDK guidance).
+
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 
