@@ -207,13 +207,11 @@
   }
 }
 
-.compose-panel-in {
-  opacity: 0;
-  transform: translateY(-6px);
-}
-
-.compose-panel-in-active {
-  animation: compose-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+/* Avoid opacity: 0 on the base class — iOS Safari may skip the animation and hide content */
+@media (prefers-reduced-motion: no-preference) {
+  .compose-panel-in-active {
+    animation: compose-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
 }
 
 /* Board note cards — Cursor web: white surfaces on gray canvas */

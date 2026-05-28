@@ -98,7 +98,8 @@ export function ClipboardEditor({
   });
 
   useEffect(() => {
-    editor?.setEditable(!disabled);
+    if (!editor) return;
+    editor.setEditable(!disabled);
   }, [disabled, editor]);
 
   if (!editor) {
@@ -109,6 +110,7 @@ export function ClipboardEditor({
           minHeightClassName,
           className
         )}
+        aria-busy="true"
       />
     );
   }
@@ -118,14 +120,12 @@ export function ClipboardEditor({
       className={cn(
         "overflow-hidden rounded-lg border border-border bg-input",
         "focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25",
-        disabled && "opacity-60",
         className
       )}
     >
       <div className="chip-scroll-row flex flex-nowrap items-center gap-0.5 border-b border-border bg-card/60 px-1 py-1 sm:flex-wrap sm:px-1.5">
         <ToolbarButton
           label="Bold"
-          disabled={disabled}
           active={editor.isActive("bold")}
           onClick={() => editor.chain().focus().toggleBold().run()}
         >
@@ -133,7 +133,6 @@ export function ClipboardEditor({
         </ToolbarButton>
         <ToolbarButton
           label="Italic"
-          disabled={disabled}
           active={editor.isActive("italic")}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         >
@@ -141,7 +140,6 @@ export function ClipboardEditor({
         </ToolbarButton>
         <ToolbarButton
           label="Bullet list"
-          disabled={disabled}
           active={editor.isActive("bulletList")}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
         >
@@ -150,14 +148,14 @@ export function ClipboardEditor({
         <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />
         <ToolbarButton
           label="Undo"
-          disabled={disabled || !editor.can().undo()}
+          disabled={!editor.can().undo()}
           onClick={() => editor.chain().focus().undo().run()}
         >
           <Undo2 className="size-3.5" />
         </ToolbarButton>
         <ToolbarButton
           label="Redo"
-          disabled={disabled || !editor.can().redo()}
+          disabled={!editor.can().redo()}
           onClick={() => editor.chain().focus().redo().run()}
         >
           <Redo2 className="size-3.5" />
@@ -167,7 +165,6 @@ export function ClipboardEditor({
             <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />
             <ToolbarButton
               label="Paste from system clipboard"
-              disabled={disabled}
               onClick={onPasteFromClipboard}
             >
               <ClipboardPaste className="size-3.5" />

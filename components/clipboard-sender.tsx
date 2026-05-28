@@ -250,6 +250,8 @@ export function ClipboardSender({ code }: Props) {
 
   const sendLabel = sendButtonLabel(sendState);
   const showSpinner = p2p.status === "connecting";
+  const connected = p2p.status === "connected";
+  const canSend = connected && Boolean(draft.text.trim()) && ready;
 
   return (
     <div className="flex min-h-dvh min-w-0 flex-col overflow-x-hidden bg-background">
@@ -321,7 +323,7 @@ export function ClipboardSender({ code }: Props) {
         <div
           className={cn(
             panel,
-            "flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-0"
+            "flex min-h-0 flex-1 flex-col gap-3 p-0"
           )}
         >
           <p className="shrink-0 px-3 pt-3 text-sm font-medium sm:px-4 sm:pt-4">
@@ -335,7 +337,6 @@ export function ClipboardSender({ code }: Props) {
               minHeightClassName="min-h-[min(12rem,40dvh)] sm:min-h-[200px]"
               onChange={setDraft}
               onPasteFromClipboard={() => void pasteFromSystem()}
-              disabled={p2p.status !== "connected" || !ready}
             />
           </div>
 
@@ -344,11 +345,7 @@ export function ClipboardSender({ code }: Props) {
               <Button
                 type="button"
                 className={cn(touchTarget, "h-12 w-full")}
-                disabled={
-                  !draft.text.trim() ||
-                  p2p.status !== "connected" ||
-                  !ready
-                }
+                disabled={!canSend}
                 onClick={handleSend}
               >
                 {showSpinner ? (
