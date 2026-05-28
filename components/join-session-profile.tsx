@@ -76,8 +76,8 @@ function StepProgress({
 export function JoinSessionProfile({
   code: fixedCode,
   title = "Join session",
-  subtitle = "Name and icon for this session.",
-  submitLabel = "Enter session",
+  subtitle = "Choose how others see you in the room.",
+  submitLabel = "Join session",
   busy = false,
   error,
   className,

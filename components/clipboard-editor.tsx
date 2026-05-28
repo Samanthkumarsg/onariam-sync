@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect } from "react";
 
-import { isEmptyEditorHtml, plainTextFromHtml } from "@/lib/clipboard-html";
+import { plainTextFromHtml } from "@/lib/clipboard-html";
 import { cn } from "@/lib/utils";
 
 export type ClipboardEditorValue = {
@@ -100,15 +100,6 @@ export function ClipboardEditor({
   useEffect(() => {
     editor?.setEditable(!disabled);
   }, [disabled, editor]);
-
-  useEffect(() => {
-    if (!editor) return;
-    const next = initialContent || "";
-    if (editor.getHTML() === next) return;
-    editor.commands.setContent(next, {
-      emitUpdate: !isEmptyEditorHtml(next),
-    });
-  }, [editor, initialContent]);
 
   if (!editor) {
     return (

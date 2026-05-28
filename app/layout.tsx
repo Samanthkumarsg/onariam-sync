@@ -19,8 +19,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Onariam Sync",
-  description:
-    "Paste from phone to browser in seconds — scan, send, copy. Short-lived sync sessions.",
+  description: "Universal clipboard — paste from phone to browser, peer-to-peer",
   other: {
     "color-scheme": "light",
   },

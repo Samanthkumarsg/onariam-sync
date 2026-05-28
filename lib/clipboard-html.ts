@@ -1,9 +1,7 @@
 /** Plain text extracted from TipTap / clipboard HTML (client-only). */
 
-import { sanitizeClipboardHtml } from "@/lib/sanitize-html";
-
 export function plainTextFromHtml(html: string): string {
-  const trimmed = sanitizeClipboardHtml(html) ?? html.trim();
+  const trimmed = html.trim();
   if (!trimmed) return "";
   if (typeof document === "undefined") {
     return trimmed
@@ -20,10 +18,4 @@ export function plainTextFromHtml(html: string): string {
 
 export function isEmptyEditorHtml(html: string): boolean {
   return plainTextFromHtml(html).length === 0;
-}
-
-/** True when HTML carries visible rich content (not an empty TipTap doc). */
-export function hasRichHtmlContent(html: string | undefined): boolean {
-  if (!html?.trim()) return false;
-  return !isEmptyEditorHtml(html);
 }

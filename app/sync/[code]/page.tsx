@@ -147,8 +147,8 @@ export default function SyncPage() {
           className="w-full"
           code={code}
           title="Join session"
-          subtitle="Name and icon for this session."
-          submitLabel="Enter session"
+          subtitle="Pick your name and icon before entering the room."
+          submitLabel="Join session"
           onBack={() => router.push("/")}
           onSubmit={({ code: joinCode, name, avatarId }) => {
             if (!deviceId) return;

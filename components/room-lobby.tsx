@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import { useDeviceId } from "@/hooks/use-device-id";
 import type { AvatarId } from "@/lib/avatars";
 import { getAvatarEmoji } from "@/lib/avatars";
-import { lobbyCopy } from "@/lib/hook-copy";
 import { meetPath } from "@/lib/meet-code";
 import { createMeeting, type MeetingMembership } from "@/lib/meetings";
 import { saveRoomSession } from "@/lib/room-session";
@@ -331,6 +330,11 @@ export function RoomLobby() {
       >
         <header className="flex flex-col items-center gap-2 text-center">
           <OnariamLogo href={null} />
+          {view === "home" && (
+            <p className="text-sm text-muted-foreground">
+              Paste from phone to browser — peer-to-peer.
+            </p>
+          )}
         </header>
 
         <div
@@ -361,10 +365,11 @@ export function RoomLobby() {
             >
               <div className="space-y-1 text-center">
                 <h1 className="text-lg font-medium text-foreground">
-                  {lobbyCopy.headline}
+                  Sync clipboard across devices
                 </h1>
-                <p className="text-sm text-muted-foreground">
-                  {lobbyCopy.subline}
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Host a session or join with a code. Phone to browser,
+                  peer-to-peer.
                 </p>
               </div>
               <Button
@@ -380,7 +385,7 @@ export function RoomLobby() {
                 className={cn(homeCtaHover, "h-12 w-full text-base")}
                 size="lg"
               >
-                {lobbyCopy.startCta}
+                Start sync
               </Button>
               <Button
                 type="button"
@@ -392,7 +397,7 @@ export function RoomLobby() {
                 className={cn(homeCtaHover, "h-11 w-full")}
                 size="lg"
               >
-                {lobbyCopy.joinCta}
+                Join with code
               </Button>
             </div>
           )}
@@ -446,7 +451,7 @@ export function RoomLobby() {
                       Pick your emoji
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {lobbyCopy.startWizardAvatarHint}
+                      Shown in the session header.
                     </p>
                   </div>
                   <AvatarPicker
@@ -461,7 +466,7 @@ export function RoomLobby() {
                     disabled={busy}
                     onClick={() => void handleStart()}
                   >
-                    Start session
+                    Start sync
                   </Button>
                 </div>
               )}
@@ -472,8 +477,8 @@ export function RoomLobby() {
           {view === "join" && (
             <JoinSessionProfile
               title="Join with code"
-              subtitle="Name and icon for this session."
-              submitLabel="Enter session"
+              subtitle="Enter the code, your name, and an icon for the session."
+              submitLabel="Continue to session"
               busy={busy}
               error={error}
               onBack={() => {

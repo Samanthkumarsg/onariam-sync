@@ -4,8 +4,6 @@ import { Loader2 } from "lucide-react";
 
 import { OnariamLogo } from "@/components/onariam-logo";
 import { Button } from "@/components/ui/button";
-import { waitingHostCopy } from "@/lib/hook-copy";
-import { formatMeetCode } from "@/lib/meet-code";
 import { pageShell, panel, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
@@ -16,8 +14,6 @@ type Props = {
 };
 
 export function WaitingForHost({ topic, displayName, onLeave }: Props) {
-  const code = formatMeetCode(topic);
-
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <header className="shrink-0 border-b border-border pt-safe">
@@ -32,7 +28,7 @@ export function WaitingForHost({ topic, displayName, onLeave }: Props) {
         )}
       >
         <div
-          className={cn(panel, "w-full max-w-md space-y-3 p-6 text-center sm:p-8")}
+          className={cn(panel, "w-full max-w-md space-y-4 p-6 text-center sm:p-8")}
           role="status"
           aria-live="polite"
         >
@@ -41,17 +37,13 @@ export function WaitingForHost({ topic, displayName, onLeave }: Props) {
             aria-hidden
           />
           <div className="min-w-0 space-y-2">
-            <p
-              className="font-mono text-sm tracking-[0.1em] text-foreground"
-              aria-label={`Session code ${code}`}
-            >
-              {code}
-            </p>
+            <p className="font-mono text-xs text-muted-foreground">{topic}</p>
             <h1 className="text-lg font-medium text-foreground">
-              {waitingHostCopy.title}
+              Waiting for host approval
             </h1>
-            <p className="text-sm text-muted-foreground">
-              {waitingHostCopy.body(displayName)}
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Hi {displayName} — the host will let you in shortly. This page
+              updates automatically.
             </p>
           </div>
         </div>

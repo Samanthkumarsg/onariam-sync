@@ -67,11 +67,6 @@ export function SessionPairHero({
         className="w-full max-w-[min(100%,240px)] rounded-md"
       />
 
-      <p className="flex max-w-sm items-center justify-center gap-1.5 text-center text-xs leading-relaxed text-muted-foreground">
-        <Lock className="size-3.5 shrink-0 text-primary/70" aria-hidden />
-        {emptyBoardCopy.privacyNote}
-      </p>
-
       <div className="flex w-full max-w-sm flex-col gap-2">
         <Button
           type="button"
@@ -98,6 +93,11 @@ export function SessionPairHero({
           </p>
         )}
       </div>
+
+      <p className="flex max-w-sm items-center justify-center gap-1.5 text-center text-xs leading-relaxed text-muted-foreground">
+        <Lock className="size-3.5 shrink-0 text-primary/70" aria-hidden />
+        {emptyBoardCopy.privacyNote}
+      </p>
     </section>
   );
 }
