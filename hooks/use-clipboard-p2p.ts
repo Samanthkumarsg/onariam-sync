@@ -49,6 +49,7 @@ export function useClipboardP2p({
     ReturnType<typeof createClient>["channel"]
   > | null>(null);
   const makingOfferRef = useRef(false);
+  const seenDesktopReadyRef = useRef(false);
   const iceServersRef = useRef<RTCIceServer[]>(DEFAULT_ICE_SERVERS);
   const pendingIceRef = useRef<RTCIceCandidateInit[]>([]);
   const statusRef = useRef(status);
@@ -156,7 +157,8 @@ export function useClipboardP2p({
       }
     };
 
-    if (role === "desktop") {
+    /* Phone initiates the offer (better through mobile NAT); desktop receives the channel. */
+    if (role === "mobile") {
       const dc = pc.createDataChannel("clipboard", { ordered: true });
       bindDataChannel(dc);
     } else {
@@ -174,14 +176,40 @@ export function useClipboardP2p({
     });
   }, []);
 
+  const startOffer = useCallback(
+    async (pc: RTCPeerConnection) => {
+      if (makingOfferRef.current || pc.signalingState !== "stable") return;
+      makingOfferRef.current = true;
+      setStatus("connecting");
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        postSignal({
+          from: localId,
+          kind: "offer",
+          sdp: offer,
+        });
+      } catch {
+        setStatus("failed");
+        setError("Could not start peer connection");
+        makingOfferRef.current = false;
+      }
+    },
+    [localId, postSignal]
+  );
+
   const pingPeer = useCallback(() => {
     if (!channelRef.current) return;
     if (role === "mobile") {
-      postSignal({ from: localId, kind: "hello" });
+      if (seenDesktopReadyRef.current && pcRef.current) {
+        void startOffer(pcRef.current);
+      } else {
+        postSignal({ from: localId, kind: "hello" });
+      }
     } else {
       postSignal({ from: localId, kind: "desktop-ready" });
     }
-  }, [localId, postSignal, role]);
+  }, [localId, postSignal, role, startOffer]);
 
   const handleSignal = useCallback(
     async (msg: ClipboardSignalMessage) => {
@@ -190,31 +218,17 @@ export function useClipboardP2p({
       const pc = ensurePc();
 
       if (msg.kind === "desktop-ready" && role === "mobile") {
-        postSignal({ from: localId, kind: "hello" });
+        seenDesktopReadyRef.current = true;
+        await startOffer(pc);
         return;
       }
 
       if (msg.kind === "hello" && role === "desktop") {
-        if (makingOfferRef.current || pc.signalingState !== "stable") return;
-        makingOfferRef.current = true;
-        setStatus("connecting");
-        try {
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
-          postSignal({
-            from: localId,
-            kind: "offer",
-            sdp: offer,
-          });
-        } catch {
-          setStatus("failed");
-          setError("Could not start peer connection");
-          makingOfferRef.current = false;
-        }
+        postSignal({ from: localId, kind: "desktop-ready" });
         return;
       }
 
-      if (msg.kind === "offer" && role === "mobile" && msg.sdp) {
+      if (msg.kind === "offer" && role === "desktop" && msg.sdp) {
         setStatus("connecting");
         try {
           await pc.setRemoteDescription(msg.sdp);
@@ -233,7 +247,7 @@ export function useClipboardP2p({
         return;
       }
 
-      if (msg.kind === "answer" && role === "desktop" && msg.sdp) {
+      if (msg.kind === "answer" && role === "mobile" && msg.sdp) {
         try {
           await pc.setRemoteDescription(msg.sdp);
           await flushPendingIce(pc);
@@ -257,6 +271,7 @@ export function useClipboardP2p({
       localId,
       postSignal,
       role,
+      startOffer,
     ]
   );
 
@@ -317,6 +332,7 @@ export function useClipboardP2p({
     setStatus(role === "desktop" ? "waiting" : "waiting");
     setError(null);
     teardown();
+    seenDesktopReadyRef.current = false;
     iceServersRef.current = DEFAULT_ICE_SERVERS;
 
     const supabase = createClient();

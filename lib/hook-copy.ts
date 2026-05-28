@@ -57,14 +57,18 @@ export const sendScreenCopy = {
   title: "Send to desktop",
   placeholder: "Links, notes, codes…",
   pasteLabel: "Paste or type",
-  sendCta: "Send to browser",
+  sendCta: "Send to desktop",
   sent: "Sent",
   delivered: "On your board",
   copied: "Copied on desktop",
   ready: "Paste below, then send",
   connecting: "Linking to your computer…",
-  waitingDesktop: "Open the sync page on your computer first",
+  waitingDesktop: "Waiting for your computer — open the sync page with this code",
   joining: "Joining session…",
+} as const;
+
+export const desktopBoardCopy = {
+  waitingPhone: "Waiting for your phone — open the send link or scan the QR",
 } as const;
 
 export function sendStatusLine(

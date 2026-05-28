@@ -23,7 +23,11 @@ import {
   joinMeeting,
   type MemberStatus,
 } from "@/lib/meetings";
-import { sendButtonLabel, sendStatusLine } from "@/lib/hook-copy";
+import {
+  sendButtonLabel,
+  sendScreenCopy,
+  sendStatusLine,
+} from "@/lib/hook-copy";
 import { pageShell, panel, stackLayout, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
@@ -285,7 +289,7 @@ export function ClipboardSender({ code }: Props) {
                 ? "Linking"
                 : p2p.status === "failed"
                   ? "Error"
-                  : "Waiting"}
+                  : "Waiting for desktop"}
           </span>
         </div>
       </header>
@@ -299,7 +303,9 @@ export function ClipboardSender({ code }: Props) {
       >
         <div className="shrink-0 space-y-1 text-center">
           <p className="font-mono text-xs text-muted-foreground">{formatted}</p>
-          <h1 className="text-base font-medium text-foreground">Send to desktop</h1>
+          <h1 className="text-base font-medium text-foreground">
+            {sendScreenCopy.title}
+          </h1>
           <p
             className={cn(
               "mt-2 text-sm",
@@ -327,7 +333,7 @@ export function ClipboardSender({ code }: Props) {
           )}
         >
           <p className="shrink-0 px-3 pt-3 text-sm font-medium sm:px-4 sm:pt-4">
-            Paste or type
+            {sendScreenCopy.pasteLabel}
           </p>
           <div className="min-h-0 flex-1 px-3 sm:px-4">
             <ClipboardEditor

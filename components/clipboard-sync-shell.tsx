@@ -22,6 +22,7 @@ import {
   type ClipboardBoardItem,
 } from "@/lib/clipboard-inbox-storage";
 import {
+  desktopBoardCopy,
   formatPhoneInviteClipboard,
   hostToast,
   rewardToast,
@@ -316,6 +317,15 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
               </span>
             ) : null}
           </header>
+
+          {!phoneLinked && (
+            <p
+              className="shrink-0 rounded-lg border border-border bg-card px-3 py-2.5 text-center text-sm text-muted-foreground"
+              role="status"
+            >
+              {desktopBoardCopy.waitingPhone}
+            </p>
+          )}
 
           {phoneLinked && (
             <label
