@@ -1,7 +1,9 @@
 /** Plain text extracted from TipTap / clipboard HTML (client-only). */
 
+import { sanitizeClipboardHtml } from "@/lib/sanitize-html";
+
 export function plainTextFromHtml(html: string): string {
-  const trimmed = html.trim();
+  const trimmed = sanitizeClipboardHtml(html) ?? html.trim();
   if (!trimmed) return "";
   if (typeof document === "undefined") {
     return trimmed

@@ -4,6 +4,7 @@ import { Link2, Lock, Smartphone } from "lucide-react";
 
 import { QrDisplay } from "@/components/qr-display";
 import { Button } from "@/components/ui/button";
+import { emptyInboxCopy } from "@/lib/hook-copy";
 import { formatMeetCode } from "@/lib/meet-code";
 import { panel, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
@@ -45,12 +46,10 @@ export function InboxEmptyState({
           id="empty-inbox-heading"
           className="text-base font-medium text-foreground sm:text-lg"
         >
-          {phoneLinked ? "Ready to receive" : "Link your phone"}
+          {phoneLinked ? emptyInboxCopy.readyTitle : emptyInboxCopy.linkPhoneTitle}
         </h2>
         <p className="text-sm text-muted-foreground">
-          {phoneLinked
-            ? "Paste on your phone or use Add to inbox on this device."
-            : "Scan the QR or copy the link — then paste on your phone."}
+          {phoneLinked ? emptyInboxCopy.readyBody : emptyInboxCopy.linkPhoneBody}
         </p>
       </div>
 
@@ -78,7 +77,7 @@ export function InboxEmptyState({
             onClick={onCopySendLink}
           >
             <Link2 className="size-4 shrink-0" aria-hidden />
-            {copiedSendLink ? "Link copied" : "Copy link for phone"}
+            {copiedSendLink ? emptyInboxCopy.copyLinkDone : emptyInboxCopy.copyLinkCta}
           </Button>
           {onToggleSendUrl && (
             <button
@@ -103,12 +102,12 @@ export function InboxEmptyState({
       {phoneLinked ? (
         <p className="flex max-w-sm items-center justify-center gap-1.5 text-center text-xs text-accent-foreground">
           <Smartphone className="size-3.5 shrink-0" aria-hidden />
-          Phone connected — send when ready
+          {emptyInboxCopy.phoneConnected}
         </p>
       ) : (
         <p className="flex max-w-sm items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
           <Lock className="size-3.5 shrink-0" aria-hidden />
-          Peer-to-peer · not stored on our servers
+          {emptyInboxCopy.privacyNote}
         </p>
       )}
     </div>

@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 
 import { OnariamLogo } from "@/components/onariam-logo";
 import { Button } from "@/components/ui/button";
+import { waitingHostCopy } from "@/lib/hook-copy";
 import { formatMeetCode } from "@/lib/meet-code";
 import { pageShell, panel, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
@@ -47,10 +48,10 @@ export function WaitingForHost({ topic, displayName, onLeave }: Props) {
               {code}
             </p>
             <h1 className="text-lg font-medium text-foreground">
-              Waiting for host
+              {waitingHostCopy.title}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {displayName} — you&apos;ll enter automatically when approved.
+              {waitingHostCopy.body(displayName)}
             </p>
           </div>
         </div>

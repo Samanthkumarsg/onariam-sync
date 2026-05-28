@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardCheck, Sparkles } from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ClipboardCompose } from "@/components/clipboard-compose";
@@ -8,10 +8,8 @@ import { ClipboardInboxItemCard } from "@/components/clipboard-inbox-item";
 import { HostPendingBanner } from "@/components/host-pending-banner";
 import { InboxEmptyState } from "@/components/inbox-empty-state";
 import { LeaveSessionDialog } from "@/components/leave-session-dialog";
-import { SessionAiPanel } from "@/components/session-ai-panel";
 import { SessionMobileMenu } from "@/components/session-mobile-menu";
 import { SessionToolbar } from "@/components/session-toolbar";
-import { Button } from "@/components/ui/button";
 import { useClipboardP2p } from "@/hooks/use-clipboard-p2p";
 import { useClipboardRoomSync } from "@/hooks/use-clipboard-room-sync";
 import { useRoomMembers } from "@/hooks/use-room-members";
@@ -24,6 +22,12 @@ import {
   mergeClipboardItem,
   type ClipboardInboxItem,
 } from "@/lib/clipboard-inbox-storage";
+import {
+  formatDesktopInviteClipboard,
+  formatPhoneInviteClipboard,
+  rewardToast,
+} from "@/lib/hook-copy";
+import { haptic } from "@/lib/haptic";
 import { meetShareUrl, sendShareUrl } from "@/lib/meet-code";
 import type { RoomSession } from "@/lib/room-session";
 import { pageShell, sessionInboxLayout, stackLayout, touchTarget } from "@/lib/ui";
@@ -66,6 +70,24 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
     [session.topic]
   );
 
+  const copyPhoneInviteLink = useCallback(() => {
+    void navigator.clipboard.writeText(
+      formatPhoneInviteClipboard(sendUrl, session.topic)
+    );
+    haptic("light");
+    setCopiedSendLink(true);
+    setTimeout(() => setCopiedSendLink(false), 2500);
+  }, [sendUrl, session.topic]);
+
+  const copyDesktopInviteLink = useCallback(() => {
+    void navigator.clipboard.writeText(
+      formatDesktopInviteClipboard(inviteUrl, session.topic)
+    );
+    haptic("light");
+    setCopiedInvite(true);
+    setTimeout(() => setCopiedInvite(false), 2500);
+  }, [inviteUrl, session.topic]);
+
   const [items, setItems] = useState<ClipboardInboxItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -79,8 +101,6 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
   const [composeOpen, setComposeOpen] = useState(false);
   const [pairOpen, setPairOpen] = useState(false);
   const [participantsOpen, setParticipantsOpen] = useState(false);
-  const [aiOpen, setAiOpen] = useState(false);
-
   const { members, pendingMembers } = useRoomMembers(
     session.topic,
     session.deviceFingerprint,
@@ -165,6 +185,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
         try {
           await navigator.clipboard.writeText(payload.text);
           copiedToClipboard = true;
+          haptic("celebrate");
           setAutoCopiedId(payload.id);
           setTimeout(() => setAutoCopiedId(null), 2500);
         } catch {
@@ -194,6 +215,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
   const copyItem = async (item: ClipboardInboxItem) => {
     try {
       await navigator.clipboard.writeText(item.text);
+      haptic("success");
       setCopiedId(item.id);
       persistItems(
         itemsRef.current.map((row) =>
@@ -240,11 +262,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
         onPairOpenChange={setPairOpen}
         sendUrl={sendUrl}
         copiedSendLink={copiedSendLink}
-        onCopySendLink={() => {
-          void navigator.clipboard.writeText(sendUrl);
-          setCopiedSendLink(true);
-          setTimeout(() => setCopiedSendLink(false), 1500);
-        }}
+        onCopySendLink={copyPhoneInviteLink}
         showSendUrl={showSendUrl}
         onToggleSendUrl={() => setShowSendUrl((v) => !v)}
         onLeave={requestLeave}
@@ -265,7 +283,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
           role="status"
         >
           <ClipboardCheck className="size-4 shrink-0" aria-hidden />
-          Copied to clipboard
+          {rewardToast.copiedToClipboard}
         </div>
       )}
 
@@ -281,7 +299,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
           className={sessionInboxLayout}
           aria-label="Session inbox"
         >
-          <div className="grid w-full min-w-0 shrink-0 grid-cols-1 gap-2 sm:grid-cols-[1fr_auto] sm:gap-2">
+          <div className="w-full min-w-0 shrink-0">
             <ClipboardCompose
               isHost={Boolean(session.isHost)}
               displayName={session.displayName}
@@ -312,27 +330,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
                 }
               }}
             />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className={cn(
-                touchTarget,
-                "hidden h-11 w-full gap-1.5 px-3 sm:flex sm:h-10 sm:w-auto"
-              )}
-              onClick={() => setAiOpen(true)}
-              aria-label="Summarize latest inbox note"
-            >
-              <Sparkles className="size-3.5 shrink-0" aria-hidden />
-              Summarize
-            </Button>
           </div>
-
-          <SessionAiPanel
-            open={aiOpen}
-            onOpenChange={setAiOpen}
-            latestItem={items[0] ?? null}
-          />
 
           {phoneLinked && (
             <label
@@ -352,7 +350,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
                   Auto-copy new items
                 </span>
                 <span className="block text-xs text-muted-foreground">
-                  Latest phone paste goes to your system clipboard
+                  {rewardToast.latestAutoCopy}
                 </span>
               </span>
             </label>
@@ -371,11 +369,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
               topic={session.topic}
               sendUrl={sendUrl}
               copiedSendLink={copiedSendLink}
-              onCopySendLink={() => {
-                void navigator.clipboard.writeText(sendUrl);
-                setCopiedSendLink(true);
-                setTimeout(() => setCopiedSendLink(false), 1500);
-              }}
+              onCopySendLink={copyPhoneInviteLink}
               showSendUrl={showSendUrl}
               onToggleSendUrl={() => setShowSendUrl((v) => !v)}
             />
@@ -412,20 +406,11 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
         }}
         onPair={() => setPairOpen(true)}
         onParticipants={() => setParticipantsOpen(true)}
-        onSummarize={() => setAiOpen(true)}
         onLeave={requestLeave}
         copiedInvite={copiedInvite}
-        onCopyInvite={() => {
-          void navigator.clipboard.writeText(inviteUrl);
-          setCopiedInvite(true);
-          setTimeout(() => setCopiedInvite(false), 1500);
-        }}
+        onCopyInvite={copyDesktopInviteLink}
         copiedSendLink={copiedSendLink}
-        onCopySendLink={() => {
-          void navigator.clipboard.writeText(sendUrl);
-          setCopiedSendLink(true);
-          setTimeout(() => setCopiedSendLink(false), 1500);
-        }}
+        onCopySendLink={copyPhoneInviteLink}
         showSendUrl={showSendUrl}
         onToggleSendUrl={() => setShowSendUrl((v) => !v)}
       />

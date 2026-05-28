@@ -10,10 +10,8 @@
     "cursor:plugins": "npx plugins add vercel/vercel-plugin --target cursor --scope project -y"
   },
   "dependencies": {
-    "@axols/webai-js": "^1.0.0",
     "@base-ui/react": "^1.5.0",
     "@fingerprintjs/fingerprintjs": "^5.2.0",
-    "@huggingface/transformers": "^4.2.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.0",
     "@tiptap/extension-image": "^3.23.6",
@@ -22,6 +20,7 @@
     "@tiptap/starter-kit": "^3.23.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "isomorphic-dompurify": "^3.14.0",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
     "qrcode": "^1.5.4",

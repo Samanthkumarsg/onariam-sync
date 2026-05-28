@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useDeviceId } from "@/hooks/use-device-id";
 import type { AvatarId } from "@/lib/avatars";
 import { getAvatarEmoji } from "@/lib/avatars";
+import { lobbyCopy } from "@/lib/hook-copy";
 import { meetPath } from "@/lib/meet-code";
 import { createMeeting, type MeetingMembership } from "@/lib/meetings";
 import { saveRoomSession } from "@/lib/room-session";
@@ -360,10 +361,10 @@ export function RoomLobby() {
             >
               <div className="space-y-1 text-center">
                 <h1 className="text-lg font-medium text-foreground">
-                  Paste from phone to browser
+                  {lobbyCopy.headline}
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Start a session or join with a code.
+                  {lobbyCopy.subline}
                 </p>
               </div>
               <Button
@@ -379,7 +380,7 @@ export function RoomLobby() {
                 className={cn(homeCtaHover, "h-12 w-full text-base")}
                 size="lg"
               >
-                Start session
+                {lobbyCopy.startCta}
               </Button>
               <Button
                 type="button"
@@ -391,7 +392,7 @@ export function RoomLobby() {
                 className={cn(homeCtaHover, "h-11 w-full")}
                 size="lg"
               >
-                Join with code
+                {lobbyCopy.joinCta}
               </Button>
             </div>
           )}
@@ -445,7 +446,7 @@ export function RoomLobby() {
                       Pick your emoji
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Shown next to your name in the session.
+                      {lobbyCopy.startWizardAvatarHint}
                     </p>
                   </div>
                   <AvatarPicker

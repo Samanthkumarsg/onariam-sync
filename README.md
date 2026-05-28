@@ -1,3 +1,15 @@
+# Onariam Sync
+
+Universal clipboard — paste from phone to browser in a short-lived session (WebRTC + Supabase).
+
+See [UX.md](./UX.md) for product principles and [docs/PRODUCTION.md](./docs/PRODUCTION.md) for deploy, TURN, rate limits, and cleanup.
+
+## Environment
+
+Copy [.env.example](./.env.example) and set Supabase keys. For production WebRTC, configure `TURN_URLS`, `TURN_USERNAME`, and `TURN_CREDENTIAL`.
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Cursor plugins

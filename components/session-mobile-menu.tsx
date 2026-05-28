@@ -8,7 +8,6 @@ import {
   MoreHorizontal,
   QrCode,
   Smartphone,
-  Sparkles,
   Users,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -29,7 +28,6 @@ type Props = {
   onAdd: () => void;
   onPair: () => void;
   onParticipants: () => void;
-  onSummarize: () => void;
   onLeave: () => void;
   copiedInvite: boolean;
   onCopyInvite: () => void;
@@ -101,7 +99,6 @@ export function SessionMobileMenu({
   onAdd,
   onPair,
   onParticipants,
-  onSummarize,
   onLeave,
   copiedInvite,
   onCopyInvite,
@@ -145,9 +142,6 @@ export function SessionMobileMenu({
                 </span>
               )}
             </span>
-          </DockButton>
-          <DockButton label="Summarize" onClick={onSummarize}>
-            <Sparkles className="size-5 shrink-0" aria-hidden />
           </DockButton>
           <DockButton label="More" onClick={() => setMoreOpen(true)}>
             <MoreHorizontal className="size-5 shrink-0" aria-hidden />

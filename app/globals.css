@@ -515,6 +515,24 @@
   animation: emoji-drift-c ease-in-out infinite;
 }
 
+@keyframes hook-reward {
+  0% {
+    transform: scale(1);
+  }
+
+  35% {
+    transform: scale(1.02);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-hook-reward {
+  animation: hook-reward 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
 
   .compose-panel-in-active {
@@ -534,7 +552,8 @@
   .animate-word-in,
   .animate-emoji-drift-a,
   .animate-emoji-drift-b,
-  .animate-emoji-drift-c {
+  .animate-emoji-drift-c,
+  .animate-hook-reward {
     animation: none !important;
   }
 

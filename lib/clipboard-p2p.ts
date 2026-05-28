@@ -1,11 +1,11 @@
 /** WebRTC clipboard sync — signaling only via Supabase; payload stays peer-to-peer */
 
+import { sanitizeClipboardHtml } from "@/lib/sanitize-html";
+
 export const CLIPBOARD_SIGNAL_EVENT = "clipboard-webrtc-signal";
 
-export const ICE_SERVERS: RTCIceServer[] = [
-  { urls: "stun:stun.l.google.com:19302" },
-  { urls: "stun:stun1.l.google.com:19302" },
-];
+/** @deprecated Use fetchIceServers() — kept for tests and fallbacks */
+export { DEFAULT_ICE_SERVERS as ICE_SERVERS } from "@/lib/ice-servers";
 
 export type ClipboardPeerRole = "desktop" | "mobile";
 
@@ -62,7 +62,7 @@ export function createClipboardPayload(
   return {
     type: "text",
     text,
-    html: options?.html,
+    html: sanitizeClipboardHtml(options?.html),
     at: options?.at ?? Date.now(),
     id: options?.id ?? crypto.randomUUID(),
     source: options?.source,
@@ -105,7 +105,9 @@ export function decodeClipboardWireMessage(
       return {
         type: "text",
         text: parsed.text,
-        html: typeof parsed.html === "string" ? parsed.html : undefined,
+        html: sanitizeClipboardHtml(
+          typeof parsed.html === "string" ? parsed.html : undefined
+        ),
         at: typeof parsed.at === "number" ? parsed.at : Date.now(),
         id: typeof parsed.id === "string" ? parsed.id : crypto.randomUUID(),
         source:

@@ -4,9 +4,9 @@ import { REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { createClient } from "@/lib/client";
+import { fetchIceServers } from "@/lib/ice-servers";
 import {
   CLIPBOARD_SIGNAL_EVENT,
-  ICE_SERVERS,
   clipboardChannelName,
   decodeClipboardWireMessage,
   encodeClipboardAck,
@@ -47,6 +47,7 @@ export function useClipboardP2p({
     ReturnType<typeof createClient>["channel"]
   > | null>(null);
   const makingOfferRef = useRef(false);
+  const iceServersRef = useRef<RTCIceServer[] | null>(null);
   const onReceiveRef = useRef<((payload: ClipboardPayload) => void) | null>(
     null
   );
@@ -87,7 +88,9 @@ export function useClipboardP2p({
   const ensurePc = useCallback(() => {
     if (pcRef.current) return pcRef.current;
 
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    const pc = new RTCPeerConnection({
+      iceServers: iceServersRef.current ?? undefined,
+    });
     pcRef.current = pc;
 
     pc.onicecandidate = (ev) => {
@@ -257,6 +260,8 @@ export function useClipboardP2p({
   useEffect(() => {
     if (!enabled || !code) return;
 
+    let cancelled = false;
+
     setStatus(role === "desktop" ? "waiting" : "idle");
     setError(null);
     teardown();
@@ -264,27 +269,35 @@ export function useClipboardP2p({
     const supabase = createClient();
     const channel = supabase.channel(clipboardChannelName(code));
 
-    channel
-      .on(
-        "broadcast",
-        { event: CLIPBOARD_SIGNAL_EVENT },
-        (payload: { payload: ClipboardSignalMessage }) => {
-          void handleSignal(payload.payload);
-        }
-      )
-      .subscribe((state) => {
-        if (state === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
-          channelRef.current = channel;
-          if (role === "mobile") {
-            setStatus("connecting");
-            postSignal({ from: localId, kind: "hello" });
-          } else {
-            postSignal({ from: localId, kind: "desktop-ready" });
+    void (async () => {
+      const servers = await fetchIceServers();
+      if (cancelled) return;
+      iceServersRef.current = servers;
+
+      channel
+        .on(
+          "broadcast",
+          { event: CLIPBOARD_SIGNAL_EVENT },
+          (payload: { payload: ClipboardSignalMessage }) => {
+            void handleSignal(payload.payload);
           }
-        }
-      });
+        )
+        .subscribe((state) => {
+          if (cancelled) return;
+          if (state === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
+            channelRef.current = channel;
+            if (role === "mobile") {
+              setStatus("connecting");
+              postSignal({ from: localId, kind: "hello" });
+            } else {
+              postSignal({ from: localId, kind: "desktop-ready" });
+            }
+          }
+        });
+    })();
 
     return () => {
+      cancelled = true;
       channel.unsubscribe();
       channelRef.current = null;
       teardown();

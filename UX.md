@@ -2,6 +2,8 @@
 
 ## Overview
 
+For habit-loop copy and metrics (Nir Eyal–style, ethical utility hooks), see [docs/HOOKS.md](./docs/HOOKS.md) and `lib/hook-copy.ts`.
+
 Creating a great **Onariam Sync** experience is about delivering a focused, session-native flow that feels built for moving clipboard content between phone and browser—not a generic website squeezed into a sync tool.
 
 The goal is to design surfaces that feel consistent and useful while extending what users can do in a **short-lived peer-to-peer session** in ways that add real value.
@@ -11,7 +13,6 @@ The goal is to design surfaces that feel consistent and useful while extending w
 - Scan a QR or open a send link → paste on phone → item appears in the desktop inbox
 - Copy the latest note to the system clipboard in one tap
 - Host approves a joiner; everyone shares the same inbox
-- Optional: summarize the latest inbox item locally (secondary, in a drawer)
 
 **Poor examples on this platform**
 
@@ -35,7 +36,7 @@ The product should do at least one thing **better** because it is a dedicated sy
 
 If you cannot describe the clear benefit of the current screen in one sentence, simplify before shipping.
 
-The UI should also **improve the session** by providing something users cannot get from copy-paste alone: shared inbox, connection status, host approval, and optional local summarize.
+The UI should also **improve the session** by providing something users cannot get from copy-paste alone: shared inbox, connection status, and host approval.
 
 ### 1. Extract, don’t port
 
@@ -73,7 +74,7 @@ Onariam Sync provides the **session workspace**. Use UI selectively to clarify t
 - **Compose** — editor panel for “Add to inbox”
 - **Inbox** — paper cards with text, copy, source, time
 
-Skip ornamental components that do not advance link → paste → receive → copy. Optional tools (AI summarize, show full URL, assignee tags) stay **secondary**.
+Skip ornamental components that do not advance link → paste → receive → copy. Optional tools (show full URL, assignee tags) stay **secondary**.
 
 ### 4. Optimize for flow, not navigation
 
@@ -93,7 +94,6 @@ Highlight what only Onariam Sync does well:
 - **Session code** — `abc-defg-hijk` visible when pairing matters
 - **Realtime shared inbox** — latest item highlighted; optional auto-copy toggle
 - **Host approval** — pending joiners are actionable, not buried
-- **Optional local AI** — summarize latest note in a drawer; never block send/receive/copy
 
 ---
 

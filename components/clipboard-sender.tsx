@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Loader2, Send } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   ClipboardEditor,
@@ -14,6 +14,12 @@ import { Button } from "@/components/ui/button";
 import { useClipboardP2p } from "@/hooks/use-clipboard-p2p";
 import { useDeviceId } from "@/hooks/use-device-id";
 import type { AvatarId } from "@/lib/avatars";
+import {
+  sendButtonLabel,
+  sendScreenCopy,
+  sendStatusLine,
+} from "@/lib/hook-copy";
+import { haptic } from "@/lib/haptic";
 import { formatMeetCode, isValidMeetCode } from "@/lib/meet-code";
 import { needsJoinProfile } from "@/lib/join-profile";
 import { getRoomSession, saveRoomSession } from "@/lib/room-session";
@@ -124,6 +130,9 @@ export function ClipboardSender({ code }: Props) {
     };
   }, [memberStatus, deviceId, formatted]);
 
+  const prevSendStateRef = useRef<SendState>("idle");
+  const connectedHapticRef = useRef(false);
+
   useEffect(() => {
     p2p.onAck((ack) => {
       if (ack.id !== lastMessageId) return;
@@ -131,6 +140,24 @@ export function ClipboardSender({ code }: Props) {
       else setSendState("delivered");
     });
   }, [p2p, lastMessageId]);
+
+  useEffect(() => {
+    if (p2p.status === "connected" && !connectedHapticRef.current) {
+      connectedHapticRef.current = true;
+      haptic("light");
+    }
+    if (p2p.status !== "connected") {
+      connectedHapticRef.current = false;
+    }
+  }, [p2p.status]);
+
+  useEffect(() => {
+    const prev = prevSendStateRef.current;
+    prevSendStateRef.current = sendState;
+    if (prev === sendState) return;
+    if (sendState === "delivered") haptic("success");
+    if (sendState === "copied") haptic("celebrate");
+  }, [sendState]);
 
   const pasteFromSystem = useCallback(async () => {
     try {
@@ -156,6 +183,7 @@ export function ClipboardSender({ code }: Props) {
       author: displayName,
     });
     if (!payload) return;
+    haptic("light");
     setLastMessageId(payload.id);
     setSendState("sent");
     setDraft({ html: "", text: "" });
@@ -214,7 +242,7 @@ export function ClipboardSender({ code }: Props) {
   if (memberStatus === null) {
     return (
       <main className="flex min-h-dvh min-w-0 items-center justify-center overflow-x-hidden px-safe text-sm text-muted-foreground">
-        Joining session…
+        {sendScreenCopy.joining}
       </main>
     );
   }
@@ -233,29 +261,8 @@ export function ClipboardSender({ code }: Props) {
     );
   }
 
-  const statusText =
-    p2p.status === "connected"
-      ? sendState === "copied"
-        ? "Copied on desktop"
-        : sendState === "delivered"
-          ? "Delivered"
-          : sendState === "sent"
-            ? "Sent"
-            : "Ready — paste and send"
-      : p2p.status === "connecting"
-        ? "Connecting…"
-        : p2p.status === "failed"
-          ? (p2p.error ?? "Connection failed")
-          : "Open the sync page on your computer first";
-
-  const sendLabel =
-    sendState === "copied"
-      ? "Copied on desktop"
-      : sendState === "delivered"
-        ? "Delivered"
-        : sendState === "sent"
-          ? "Sent"
-          : "Send to browser";
+  const statusText = sendStatusLine(p2p.status, sendState, p2p.error);
+  const sendLabel = sendButtonLabel(sendState);
 
   return (
     <div className="flex h-dvh min-h-0 min-w-0 flex-col overflow-hidden bg-background">
@@ -274,7 +281,9 @@ export function ClipboardSender({ code }: Props) {
       >
         <div className="shrink-0 space-y-1 text-center">
           <p className="font-mono text-xs text-muted-foreground">{formatted}</p>
-          <h1 className="text-base font-medium text-foreground">Send to desktop</h1>
+          <h1 className="text-base font-medium text-foreground">
+            {sendScreenCopy.title}
+          </h1>
           <p
             className={cn(
               "mt-2 text-sm",
@@ -296,12 +305,12 @@ export function ClipboardSender({ code }: Props) {
           )}
         >
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-3 pt-3 sm:overflow-visible sm:px-4 sm:pt-4">
-            <p className="shrink-0 text-sm font-medium">Paste or type</p>
+            <p className="shrink-0 text-sm font-medium">{sendScreenCopy.pasteLabel}</p>
             <div className="min-h-0 shrink-0 pb-2">
               <ClipboardEditor
                 key={editorKey}
                 initialContent={editorSeed}
-                placeholder="Links, notes, codes…"
+                placeholder={sendScreenCopy.placeholder}
                 minHeightClassName="min-h-[min(12rem,40dvh)] sm:min-h-[200px]"
                 onChange={setDraft}
                 onPasteFromClipboard={() => void pasteFromSystem()}
@@ -314,7 +323,12 @@ export function ClipboardSender({ code }: Props) {
             <div className="flex flex-col gap-2">
               <Button
                 type="button"
-                className={cn(touchTarget, "h-12 w-full")}
+                className={cn(
+                  touchTarget,
+                  "h-12 w-full",
+                  (sendState === "copied" || sendState === "delivered") &&
+                    "motion-safe:animate-hook-reward"
+                )}
                 disabled={
                   !draft.text.trim() ||
                   p2p.status !== "connected" ||
