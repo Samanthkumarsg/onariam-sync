@@ -107,6 +107,7 @@ export function SessionToolbar({
       <SessionPairDrawer
         open={pairOpen}
         onOpenChange={onPairOpenChange}
+        topic={session.topic}
         sendUrl={sendUrl}
         copiedSendLink={copiedSendLink}
         onCopySendLink={onCopySendLink}

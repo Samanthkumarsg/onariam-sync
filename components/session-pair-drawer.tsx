@@ -12,6 +12,7 @@ import { SessionPairHero } from "@/components/session-pair-hero";
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  topic: string;
   sendUrl: string;
   copiedSendLink: boolean;
   onCopySendLink: () => void;
@@ -22,6 +23,7 @@ type Props = {
 export function SessionPairDrawer({
   open,
   onOpenChange,
+  topic,
   sendUrl,
   copiedSendLink,
   onCopySendLink,
@@ -38,6 +40,7 @@ export function SessionPairDrawer({
           </DrawerDescription>
         </DrawerHeader>
         <SessionPairHero
+          topic={topic}
           sendUrl={sendUrl}
           copiedSendLink={copiedSendLink}
           onCopySendLink={onCopySendLink}

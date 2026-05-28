@@ -24,9 +24,8 @@ export function HostPendingBanner({ count, onReview, className }: Props) {
       <div className="flex flex-col gap-3 px-safe py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <p className="text-sm text-foreground">
           <span className="font-medium">
-            {count} {count === 1 ? "person" : "people"} waiting
+            {count} waiting to join
           </span>
-          <span className="text-muted-foreground"> to join this session.</span>
         </p>
         <Button
           type="button"

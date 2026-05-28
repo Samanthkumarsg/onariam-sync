@@ -207,13 +207,11 @@
   }
 }
 
-.compose-panel-in {
-  opacity: 0;
-  transform: translateY(-6px);
-}
-
-.compose-panel-in-active {
-  animation: compose-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+/* Avoid opacity: 0 on the base class — mobile browsers may skip the animation and hide content */
+@media (prefers-reduced-motion: no-preference) {
+  .compose-panel-in-active {
+    animation: compose-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
 }
 
 /* Board note cards — Cursor web: white surfaces on gray canvas */
@@ -474,7 +472,29 @@
   animation: emoji-drift-c ease-in-out infinite;
 }
 
+@keyframes hook-reward {
+  0% {
+    transform: scale(1);
+  }
+
+  35% {
+    transform: scale(1.02);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-hook-reward {
+  animation: hook-reward 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
+
+  .compose-panel-in-active {
+    animation: none !important;
+  }
 
   .animate-lobby-pop,
   .animate-lobby-step-in,
@@ -489,7 +509,8 @@
   .animate-word-in,
   .animate-emoji-drift-a,
   .animate-emoji-drift-b,
-  .animate-emoji-drift-c {
+  .animate-emoji-drift-c,
+  .animate-hook-reward {
     animation: none !important;
   }
 

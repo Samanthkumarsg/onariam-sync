@@ -34,7 +34,7 @@ export const lobbyCopy = {
   subline: "When you need it on your computer, start here.",
   startCta: "Start session",
   joinCta: "Join with code",
-  startWizardAvatarHint: "Shown in the session so others know it’s you.",
+  startWizardAvatarHint: "Shown in the session so others know it's you.",
 } as const;
 
 export const emptyBoardCopy = {
@@ -45,7 +45,7 @@ export const emptyBoardCopy = {
   readyBody: "Paste on your phone or add from this device — everything lands on the board.",
   copyLinkCta: "Copy link for phone",
   copyLinkDone: "Link copied — open it on your phone",
-  phoneConnected: "Phone connected — send when you’re ready",
+  phoneConnected: "Phone connected — send when you're ready",
   privacyNote:
     "Direct peer link when possible · host controls who joins · session clears in 24h",
 } as const;

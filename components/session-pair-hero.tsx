@@ -5,10 +5,12 @@ import { Link2, Lock } from "lucide-react";
 import { QrDisplay } from "@/components/qr-display";
 import { Button } from "@/components/ui/button";
 import { emptyBoardCopy } from "@/lib/hook-copy";
+import { formatMeetCode } from "@/lib/meet-code";
 import { touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 type Props = {
+  topic?: string;
   sendUrl: string;
   copiedSendLink: boolean;
   onCopySendLink: () => void;
@@ -18,6 +20,7 @@ type Props = {
 };
 
 export function SessionPairHero({
+  topic,
   sendUrl,
   copiedSendLink,
   onCopySendLink,
@@ -25,6 +28,13 @@ export function SessionPairHero({
   onToggleSendUrl,
   className,
 }: Props) {
+  const codeMatch = sendUrl.match(/\/send\/([a-z0-9-]+)/i);
+  const code = topic
+    ? formatMeetCode(topic)
+    : codeMatch
+      ? formatMeetCode(codeMatch[1])
+      : null;
+
   return (
     <section
       className={cn(
@@ -41,6 +51,15 @@ export function SessionPairHero({
           {emptyBoardCopy.linkPhoneBody}
         </p>
       </div>
+
+      {code && (
+        <p
+          className="font-mono text-lg tracking-[0.12em] text-foreground"
+          aria-label={`Session code ${code}`}
+        >
+          {code}
+        </p>
+      )}
 
       <QrDisplay
         url={sendUrl}
