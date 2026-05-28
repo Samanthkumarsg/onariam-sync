@@ -4,14 +4,13 @@ import { REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { createClient } from "@/lib/client";
-import { fetchIceServers } from "@/lib/ice-servers";
+import { DEFAULT_ICE_SERVERS, fetchIceServers } from "@/lib/ice-servers";
 import {
   CLIPBOARD_SIGNAL_EVENT,
   clipboardChannelName,
   decodeClipboardWireMessage,
   encodeClipboardAck,
   createClipboardPayload,
-  encodeClipboardPayload,
   type ClipboardAck,
   type ClipboardPeerRole,
   type ClipboardPayload,
@@ -24,6 +23,9 @@ export type ClipboardConnectionStatus =
   | "connecting"
   | "connected"
   | "failed";
+
+const SIGNAL_RETRY_MS = 3500;
+const CONNECT_HINT_MS = 20000;
 
 type Options = {
   code: string;
@@ -47,7 +49,10 @@ export function useClipboardP2p({
     ReturnType<typeof createClient>["channel"]
   > | null>(null);
   const makingOfferRef = useRef(false);
-  const iceServersRef = useRef<RTCIceServer[] | null>(null);
+  const iceServersRef = useRef<RTCIceServer[]>(DEFAULT_ICE_SERVERS);
+  const pendingIceRef = useRef<RTCIceCandidateInit[]>([]);
+  const statusRef = useRef(status);
+  statusRef.current = status;
   const onReceiveRef = useRef<((payload: ClipboardPayload) => void) | null>(
     null
   );
@@ -59,7 +64,36 @@ export function useClipboardP2p({
     pcRef.current?.close();
     pcRef.current = null;
     makingOfferRef.current = false;
+    pendingIceRef.current = [];
   }, []);
+
+  const flushPendingIce = useCallback(async (pc: RTCPeerConnection) => {
+    if (!pc.remoteDescription) return;
+    const pending = pendingIceRef.current;
+    pendingIceRef.current = [];
+    for (const candidate of pending) {
+      try {
+        await pc.addIceCandidate(candidate);
+      } catch {
+        /* stale */
+      }
+    }
+  }, []);
+
+  const addIceCandidateSafe = useCallback(
+    async (pc: RTCPeerConnection, candidate: RTCIceCandidateInit) => {
+      if (!pc.remoteDescription) {
+        pendingIceRef.current.push(candidate);
+        return;
+      }
+      try {
+        await pc.addIceCandidate(candidate);
+      } catch {
+        /* ignore stale candidates */
+      }
+    },
+    []
+  );
 
   const bindDataChannel = useCallback((dc: RTCDataChannel) => {
     dcRef.current = dc;
@@ -89,7 +123,7 @@ export function useClipboardP2p({
     if (pcRef.current) return pcRef.current;
 
     const pc = new RTCPeerConnection({
-      iceServers: iceServersRef.current ?? undefined,
+      iceServers: iceServersRef.current,
     });
     pcRef.current = pc;
 
@@ -113,7 +147,11 @@ export function useClipboardP2p({
       else if (st === "connecting") setStatus("connecting");
       else if (st === "failed" || st === "disconnected") {
         setStatus("failed");
-        setError("Connection lost — scan QR again");
+        setError(
+          role === "mobile"
+            ? "Could not reach desktop — keep the sync page open on your computer"
+            : "Phone connection lost — reopen the send link on your phone"
+        );
         teardown();
       }
     };
@@ -135,6 +173,15 @@ export function useClipboardP2p({
       payload: msg,
     });
   }, []);
+
+  const pingPeer = useCallback(() => {
+    if (!channelRef.current) return;
+    if (role === "mobile") {
+      postSignal({ from: localId, kind: "hello" });
+    } else {
+      postSignal({ from: localId, kind: "desktop-ready" });
+    }
+  }, [localId, postSignal, role]);
 
   const handleSignal = useCallback(
     async (msg: ClipboardSignalMessage) => {
@@ -171,6 +218,7 @@ export function useClipboardP2p({
         setStatus("connecting");
         try {
           await pc.setRemoteDescription(msg.sdp);
+          await flushPendingIce(pc);
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
           postSignal({
@@ -188,6 +236,7 @@ export function useClipboardP2p({
       if (msg.kind === "answer" && role === "desktop" && msg.sdp) {
         try {
           await pc.setRemoteDescription(msg.sdp);
+          await flushPendingIce(pc);
           makingOfferRef.current = false;
         } catch {
           setStatus("failed");
@@ -198,14 +247,17 @@ export function useClipboardP2p({
       }
 
       if (msg.kind === "ice" && msg.candidate) {
-        try {
-          await pc.addIceCandidate(msg.candidate);
-        } catch {
-          /* ignore stale candidates */
-        }
+        await addIceCandidateSafe(pc, msg.candidate);
       }
     },
-    [ensurePc, localId, postSignal, role]
+    [
+      addIceCandidateSafe,
+      ensurePc,
+      flushPendingIce,
+      localId,
+      postSignal,
+      role,
+    ]
   );
 
   const sendPayload = useCallback(
@@ -262,9 +314,10 @@ export function useClipboardP2p({
 
     let cancelled = false;
 
-    setStatus(role === "desktop" ? "waiting" : "idle");
+    setStatus(role === "desktop" ? "waiting" : "waiting");
     setError(null);
     teardown();
+    iceServersRef.current = DEFAULT_ICE_SERVERS;
 
     const supabase = createClient();
     const channel = supabase.channel(clipboardChannelName(code));
@@ -286,12 +339,9 @@ export function useClipboardP2p({
           if (cancelled) return;
           if (state === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
             channelRef.current = channel;
-            if (role === "mobile") {
-              setStatus("connecting");
-              postSignal({ from: localId, kind: "hello" });
-            } else {
-              postSignal({ from: localId, kind: "desktop-ready" });
-            }
+            setStatus("waiting");
+            setError(null);
+            pingPeer();
           }
         });
     })();
@@ -303,15 +353,33 @@ export function useClipboardP2p({
       teardown();
       setStatus("idle");
     };
-  }, [
-    code,
-    enabled,
-    handleSignal,
-    localId,
-    postSignal,
-    role,
-    teardown,
-  ]);
+  }, [code, enabled, handleSignal, pingPeer, role, teardown]);
+
+  /** Re-announce while waiting so late joiners (phone or desktop) can pair. */
+  useEffect(() => {
+    if (!enabled || !code) return;
+    const id = setInterval(() => {
+      if (statusRef.current === "connected" || statusRef.current === "failed") {
+        return;
+      }
+      pingPeer();
+    }, SIGNAL_RETRY_MS);
+    return () => clearInterval(id);
+  }, [code, enabled, pingPeer]);
+
+  /** Nudge user if desktop sync tab is not open. */
+  useEffect(() => {
+    if (!enabled || role !== "mobile") return;
+    const id = setTimeout(() => {
+      if (statusRef.current === "connected" || statusRef.current === "failed") {
+        return;
+      }
+      setError(
+        "Open the sync page on your computer (same session code), then wait a moment."
+      );
+    }, CONNECT_HINT_MS);
+    return () => clearTimeout(id);
+  }, [code, enabled, role]);
 
   return { status, error, sendText, sendPayload, sendAck, onReceive, onAck };
 }

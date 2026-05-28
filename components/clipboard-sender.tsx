@@ -23,6 +23,7 @@ import {
   joinMeeting,
   type MemberStatus,
 } from "@/lib/meetings";
+import { sendButtonLabel, sendStatusLine } from "@/lib/hook-copy";
 import { pageShell, panel, stackLayout, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
@@ -244,27 +245,46 @@ export function ClipboardSender({ code }: Props) {
           ? "Delivered to desktop"
           : sendState === "sent"
             ? "Sent"
-            : "Connected — send to desktop"
-      : p2p.status === "connecting"
-        ? "Connecting to desktop…"
-        : p2p.status === "failed"
-          ? (p2p.error ?? "Connection failed")
-          : "Desktop not linked — open the sync page on your computer, then send";
+            : "Connected — paste below and send"
+      : sendStatusLine(p2p.status, sendState, p2p.error);
 
-  const sendLabel =
-    sendState === "copied"
-      ? "Copied on desktop"
-      : sendState === "delivered"
-        ? "Delivered"
-        : sendState === "sent"
-          ? "Sent"
-          : "Send to browser";
+  const sendLabel = sendButtonLabel(sendState);
+  const showSpinner = p2p.status === "connecting";
 
   return (
     <div className="flex min-h-dvh min-w-0 flex-col overflow-x-hidden bg-background">
-      <header className="shrink-0 border-b border-border pt-safe">
-        <div className="flex items-center justify-center px-safe py-3 sm:py-4">
-          <OnariamLogo href={null} size="sm" />
+      <header className="relative z-50 shrink-0 border-b border-border bg-card pt-safe">
+        <div
+          className={cn(
+            pageShell,
+            "flex min-h-12 items-center justify-between gap-2 py-2"
+          )}
+        >
+          <OnariamLogo href={null} size="sm" compact className="shrink-0" />
+          <span className="min-w-0 truncate font-mono text-xs text-muted-foreground">
+            {formatted}
+          </span>
+          <span
+            className={cn(
+              "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+              p2p.status === "connected"
+                ? "bg-accent text-accent-foreground"
+                : p2p.status === "connecting"
+                  ? "bg-muted text-muted-foreground"
+                  : p2p.status === "failed"
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-surface-elevated text-muted-foreground"
+            )}
+            role="status"
+          >
+            {p2p.status === "connected"
+              ? "Linked"
+              : p2p.status === "connecting"
+                ? "Linking"
+                : p2p.status === "failed"
+                  ? "Error"
+                  : "Waiting"}
+          </span>
         </div>
       </header>
 
@@ -331,7 +351,7 @@ export function ClipboardSender({ code }: Props) {
                 }
                 onClick={handleSend}
               >
-                {p2p.status === "connecting" ? (
+                {showSpinner ? (
                   <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
                 ) : sendState === "copied" ? (
                   <Check className="size-4 shrink-0" aria-hidden />
