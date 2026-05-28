@@ -4,7 +4,7 @@ import { REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
 import { useCallback, useEffect, useRef } from "react";
 
 import { createClient } from "@/lib/client";
-import type { ClipboardInboxItem } from "@/lib/clipboard-inbox-storage";
+import type { ClipboardBoardItem } from "@/lib/clipboard-inbox-storage";
 import {
   CLIPBOARD_INBOX_EVENT,
   inboxChannelName,
@@ -16,9 +16,9 @@ type Options = {
   topic: string;
   deviceFingerprint: string;
   enabled?: boolean;
-  getItems: () => ClipboardInboxItem[];
-  onUpsert: (item: ClipboardInboxItem) => void;
-  onMergeBatch: (items: ClipboardInboxItem[]) => void;
+  getItems: () => ClipboardBoardItem[];
+  onUpsert: (item: ClipboardBoardItem) => void;
+  onMergeBatch: (items: ClipboardBoardItem[]) => void;
 };
 
 export function useClipboardRoomSync({
@@ -50,7 +50,7 @@ export function useClipboardRoomSync({
   }, []);
 
   const publishUpsert = useCallback(
-    (item: ClipboardInboxItem) => {
+    (item: ClipboardBoardItem) => {
       publish({ kind: "upsert", from: deviceFingerprint, item });
     },
     [deviceFingerprint, publish]

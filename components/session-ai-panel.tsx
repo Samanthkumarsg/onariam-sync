@@ -12,13 +12,13 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { useWebAI } from "@/hooks/use-webai";
-import type { ClipboardInboxItem } from "@/lib/clipboard-inbox-storage";
+import type { ClipboardBoardItem } from "@/lib/clipboard-inbox-storage";
 import { cn } from "@/lib/utils";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  latestItem?: ClipboardInboxItem | null;
+  latestItem?: ClipboardBoardItem | null;
 };
 
 function engineLabel(engine: ReturnType<typeof useWebAI>["engine"]) {
@@ -146,7 +146,7 @@ export function SessionAiPanel({ open, onOpenChange, latestItem }: Props) {
 
           {!latestItem && webai.isReady && (
             <p className="text-xs text-muted-foreground">
-              Add an inbox item first, then summarize it here.
+              Add a board item first, then summarize it here.
             </p>
           )}
         </div>

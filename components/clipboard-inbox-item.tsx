@@ -5,13 +5,14 @@ import { Check, ClipboardCheck, Copy, Smartphone } from "lucide-react";
 import { MemberTagPicker } from "@/components/member-tag-picker";
 import { Button } from "@/components/ui/button";
 import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
-import type { ClipboardInboxItem } from "@/lib/clipboard-inbox-storage";
+import { resolveItemAuthor } from "@/lib/clipboard-author";
+import type { ClipboardBoardItem } from "@/lib/clipboard-inbox-storage";
 import type { RoomMember } from "@/lib/meetings";
 import { paperCard } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  item: ClipboardInboxItem;
+  item: ClipboardBoardItem;
   isLatest: boolean;
   highlightCopy?: boolean;
   copying?: boolean;
@@ -22,14 +23,14 @@ type Props = {
   showAssignee?: boolean;
 };
 
-function sourceLabel(item: ClipboardInboxItem) {
+function sourceLabel(item: ClipboardBoardItem) {
   if (item.source === "host") return "Host";
   if (item.source === "desktop") return "Desktop";
   if (item.source === "mobile") return "Phone";
   return null;
 }
 
-export function ClipboardInboxItemCard({
+export function ClipboardBoardItemCard({
   item,
   isLatest,
   highlightCopy,
@@ -43,6 +44,7 @@ export function ClipboardInboxItemCard({
   const from = sourceLabel(item);
   const copied = item.copiedToClipboard;
   const assignee = item.assignee;
+  const author = resolveItemAuthor(item, members);
   const canAssign =
     showAssignee && members.length > 0 && Boolean(onAssigneeChange);
 
@@ -54,9 +56,21 @@ export function ClipboardInboxItemCard({
         isLatest && "paper-card--latest z-[1]",
         highlightCopy && "paper-card--highlight"
       )}
-      aria-label={copied ? "Clipboard item, copied" : "Clipboard item"}
+      aria-label={
+        copied
+          ? `Pasted by ${author.displayName}, copied`
+          : `Pasted by ${author.displayName}`
+      }
     >
-      <div className="relative z-[1] flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:gap-2.5">
+      <div className="relative z-[1] flex min-w-0 gap-2.5 sm:gap-3">
+        <span
+          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-elevated text-xl leading-none sm:size-9 sm:text-lg"
+          title={author.displayName}
+          aria-hidden
+        >
+          {author.emoji}
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:gap-2.5">
         {item.html ? (
           <div
             className={cn(
@@ -88,21 +102,25 @@ export function ClipboardInboxItemCard({
             {copied ? "Copy again" : "Copy to clipboard"}
           </span>
         </Button>
+        </div>
       </div>
 
-      <div className="relative z-[1] flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 border-t border-[#e5e1d8]/90 pt-2 text-[11px] text-ink-muted">
+      <div className="relative z-[1] flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 border-t border-[#e5e1d8]/90 pt-2 pl-[2.875rem] text-[11px] text-ink-muted sm:pl-12">
         {isLatest && (
           <span className="rounded-sm border border-[#d9d4c8] bg-[#fdfcfa] px-1 py-px font-mono text-[10px] font-medium uppercase tracking-wide text-ink-muted">
             Latest
           </span>
         )}
+        <span className="inline-flex max-w-full items-center gap-1 truncate font-medium text-foreground/90">
+          <span aria-hidden>{author.emoji}</span>
+          <span className="truncate">{author.displayName}</span>
+        </span>
         {from && (
           <span className="inline-flex max-w-full items-center gap-0.5 truncate">
             {item.source === "mobile" ? (
               <Smartphone className="size-2.5 shrink-0" aria-hidden />
             ) : null}
             {from}
-            {item.author ? ` · ${item.author}` : ""}
           </span>
         )}
         {assignee && !canAssign && (
@@ -143,3 +161,6 @@ export function ClipboardInboxItemCard({
     </li>
   );
 }
+
+/** @deprecated Use ClipboardBoardItemCard */
+export const ClipboardInboxItemCard = ClipboardBoardItemCard;

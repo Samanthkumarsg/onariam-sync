@@ -1,4 +1,4 @@
-import type { ClipboardInboxItem } from "@/lib/clipboard-inbox-storage";
+import type { ClipboardBoardItem } from "@/lib/clipboard-inbox-storage";
 import { clipboardChannelName } from "@/lib/clipboard-p2p";
 
 export const CLIPBOARD_INBOX_EVENT = "clipboard-inbox-sync";
@@ -11,13 +11,13 @@ export type ClipboardInboxSyncRequest = {
 export type ClipboardInboxSyncBatch = {
   kind: "sync-batch";
   from: string;
-  items: ClipboardInboxItem[];
+  items: ClipboardBoardItem[];
 };
 
 export type ClipboardInboxUpsert = {
   kind: "upsert";
   from: string;
-  item: ClipboardInboxItem;
+  item: ClipboardBoardItem;
 };
 
 export type ClipboardInboxRoomMessage =

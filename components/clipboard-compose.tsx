@@ -1,8 +1,9 @@
 "use client";
 
-import { ClipboardPaste, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useCallback, useId, useState } from "react";
 
+import { PasteFab } from "@/components/paste-fab";
 import {
   ClipboardEditor,
   type ClipboardEditorValue,
@@ -10,29 +11,37 @@ import {
 import { MemberTagPicker } from "@/components/member-tag-picker";
 import { Button } from "@/components/ui/button";
 import { isEmptyEditorHtml, plainTextFromHtml } from "@/lib/clipboard-html";
+import type { AvatarId } from "@/lib/avatars";
+import { getAvatarEmoji } from "@/lib/avatars";
 import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
 import { createClipboardPayload } from "@/lib/clipboard-p2p";
-import type { ClipboardInboxItem } from "@/lib/clipboard-inbox-storage";
+import type { ClipboardBoardItem } from "@/lib/clipboard-inbox-storage";
 import type { RoomMember } from "@/lib/meetings";
-import { panel, touchTarget } from "@/lib/ui";
+import { touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 type Props = {
   isHost: boolean;
   displayName: string;
+  avatarId: AvatarId;
   deviceFingerprint: string;
   members: RoomMember[];
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  onAdd: (item: ClipboardInboxItem) => void;
-  onBroadcast?: (item: ClipboardInboxItem) => void;
+  onAdd: (item: ClipboardBoardItem) => void;
+  onBroadcast?: (item: ClipboardBoardItem) => void;
   showAssignee?: boolean;
   className?: string;
+  /** When true, show floating Paste control (board has items or desktop). */
+  floatingFab?: boolean;
+  /** Fired after double-tap quick paste succeeds */
+  onQuickPaste?: () => void;
 };
 
 export function ClipboardCompose({
   isHost,
   displayName,
+  avatarId,
   deviceFingerprint,
   members,
   open: openControlled,
@@ -41,6 +50,8 @@ export function ClipboardCompose({
   onBroadcast,
   showAssignee = true,
   className,
+  floatingFab = true,
+  onQuickPaste,
 }: Props) {
   const panelId = useId();
   const [openInternal, setOpenInternal] = useState(false);
@@ -78,6 +89,61 @@ export function ClipboardCompose({
     await pasteFromSystem();
   }, [pasteFromSystem, setOpen]);
 
+  const textToEscapedHtml = useCallback((text: string) => {
+    return `<p>${text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\n/g, "<br>")}</p>`;
+  }, []);
+
+  const addTextToBoard = useCallback(
+    (text: string, html?: string, itemAssignee: ClipboardAssignee | null = null) => {
+      const trimmed = text.trim();
+      if (!trimmed) return false;
+
+      const base = createClipboardPayload(trimmed, {
+        html: html ?? textToEscapedHtml(trimmed),
+        source: isHost ? "host" : "desktop",
+        author: displayName,
+        authorAvatar: getAvatarEmoji(avatarId),
+        authorDeviceFingerprint: deviceFingerprint,
+        assignee: itemAssignee,
+      });
+
+      const item: ClipboardBoardItem = {
+        ...base,
+        copiedToClipboard: false,
+        assignee: itemAssignee,
+      };
+
+      onAdd(item);
+      onBroadcast?.(item);
+      return true;
+    },
+    [
+      avatarId,
+      deviceFingerprint,
+      displayName,
+      isHost,
+      onAdd,
+      onBroadcast,
+      textToEscapedHtml,
+    ]
+  );
+
+  const pasteQuickToBoard = useCallback(async () => {
+    try {
+      const clip = await navigator.clipboard.readText();
+      if (!clip?.trim()) return false;
+      const ok = addTextToBoard(clip, textToEscapedHtml(clip));
+      if (ok) onQuickPaste?.();
+      return ok;
+    } catch {
+      return false;
+    }
+  }, [addTextToBoard, onQuickPaste, textToEscapedHtml]);
+
   const resetEditor = () => {
     setDraft({ html: "", text: "" });
     setEditorSeed("");
@@ -89,21 +155,8 @@ export function ClipboardCompose({
     if (isEmptyEditorHtml(draft.html) && !draft.text.trim()) return;
 
     const text = draft.text.trim() || plainTextFromHtml(draft.html);
-    const base = createClipboardPayload(text, {
-      html: draft.html,
-      source: isHost ? "host" : "desktop",
-      author: displayName,
-      assignee,
-    });
+    if (!addTextToBoard(text, draft.html, assignee)) return;
 
-    const item: ClipboardInboxItem = {
-      ...base,
-      copiedToClipboard: false,
-      assignee,
-    };
-
-    onAdd(item);
-    onBroadcast?.(item);
     resetEditor();
     setOpen(false);
   };
@@ -111,78 +164,81 @@ export function ClipboardCompose({
   const canAdd = draft.text.trim().length > 0;
 
   return (
-    <div className={cn("min-w-0 shrink-0", className)}>
-      {!open ? (
-        <Button
-          type="button"
-          variant="default"
-          size="sm"
-          className={cn(touchTarget, "h-11 w-full gap-1.5 px-3 sm:h-9 sm:w-auto")}
+    <>
+      {floatingFab && !open && (
+        <PasteFab
           onClick={() => void openAndPaste()}
-        >
-          <ClipboardPaste className="size-3.5 shrink-0" aria-hidden />
-          Add to inbox
-        </Button>
-      ) : (
+          onDoubleClick={() => void pasteQuickToBoard()}
+        />
+      )}
+
+      {open && (
         <div
           className={cn(
-            "overflow-hidden rounded-md border border-border bg-card transition-shadow duration-300",
-            "ring-1 ring-primary/20 shadow-md shadow-primary/5"
+            "fixed inset-x-3 bottom-[max(6.5rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-lg sm:static sm:inset-auto sm:z-auto sm:max-w-none",
+            className
           )}
         >
-          <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              Add to inbox
-            </span>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className={cn(
-                touchTarget,
-                "inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-surface-elevated hover:text-foreground"
-              )}
-              aria-label="Close editor"
-            >
-              <X className="size-3.5" aria-hidden />
-            </button>
-          </div>
-
           <div
-            id={panelId}
-            className="compose-panel-in compose-panel-in-active flex flex-col gap-2.5 px-3 pb-3 pt-2.5 sm:gap-3 sm:px-3.5 sm:pb-3.5"
-          >
-            <ClipboardEditor
-              key={editorKey}
-              initialContent={editorSeed}
-              placeholder="Paste or compose…"
-              minHeightClassName="min-h-[88px] sm:min-h-[100px]"
-              onChange={setDraft}
-              onPasteFromClipboard={() => void pasteFromSystem()}
-            />
-
-            {showAssignee && (
-              <MemberTagPicker
-                members={members}
-                currentDeviceFingerprint={deviceFingerprint}
-                value={assignee}
-                onChange={setAssignee}
-                className="space-y-1.5 [&_button]:min-h-7"
-              />
+            className={cn(
+              "overflow-hidden rounded-2xl border border-border/80 bg-card/95 shadow-lg backdrop-blur-sm",
+              "sm:rounded-xl sm:shadow-md"
             )}
+          >
+            <div className="flex items-center justify-between gap-2 border-b border-border/80 px-3 py-2">
+              <span className="text-xs font-medium text-muted-foreground">
+                Paste to board
+              </span>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className={cn(
+                  touchTarget,
+                  "inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-surface-elevated hover:text-foreground"
+                )}
+                aria-label="Close"
+              >
+                <X className="size-3.5" aria-hidden />
+              </button>
+            </div>
 
-            <Button
-              type="button"
-              size="sm"
-              className={cn(touchTarget, "h-11 w-full sm:h-9 sm:w-auto sm:self-end")}
-              disabled={!canAdd}
-              onClick={handleAdd}
+            <div
+              id={panelId}
+              className="compose-panel-in compose-panel-in-active flex flex-col gap-2.5 px-3 pb-3 pt-2.5 sm:gap-3 sm:px-3.5 sm:pb-3.5"
             >
-              <Plus className="size-3.5 shrink-0" aria-hidden />
-              Save to inbox
-            </Button>
+              <ClipboardEditor
+                key={editorKey}
+                initialContent={editorSeed}
+                placeholder="Paste or compose…"
+                minHeightClassName="min-h-[88px] sm:min-h-[100px]"
+                onChange={setDraft}
+                onPasteFromClipboard={() => void pasteFromSystem()}
+              />
+
+              {showAssignee && (
+                <MemberTagPicker
+                  members={members}
+                  currentDeviceFingerprint={deviceFingerprint}
+                  value={assignee}
+                  onChange={setAssignee}
+                  className="space-y-1.5 [&_button]:min-h-7"
+                />
+              )}
+
+              <Button
+                type="button"
+                size="sm"
+                className={cn(touchTarget, "h-11 w-full sm:h-9 sm:w-auto sm:self-end")}
+                disabled={!canAdd}
+                onClick={handleAdd}
+              >
+                <Plus className="size-3.5 shrink-0" aria-hidden />
+                Add to board
+              </Button>
+            </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

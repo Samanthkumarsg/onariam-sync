@@ -30,7 +30,7 @@ export function SessionPairDrawer({
 }: Props) {
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[min(90dvh,640px)]">
+      <DrawerContent className="max-h-[min(90dvh,640px)] border-border/60 bg-background">
         <DrawerHeader className="sr-only">
           <DrawerTitle>Link your phone</DrawerTitle>
           <DrawerDescription>
@@ -43,7 +43,7 @@ export function SessionPairDrawer({
           onCopySendLink={onCopySendLink}
           showSendUrl={showSendUrl}
           onToggleSendUrl={onToggleSendUrl}
-          className="border-0 bg-card shadow-none"
+          className="bg-transparent"
         />
       </DrawerContent>
     </Drawer>

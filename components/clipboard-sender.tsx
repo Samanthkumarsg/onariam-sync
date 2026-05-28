@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { useClipboardP2p } from "@/hooks/use-clipboard-p2p";
 import { useDeviceId } from "@/hooks/use-device-id";
 import type { AvatarId } from "@/lib/avatars";
+import { getAvatarEmoji } from "@/lib/avatars";
 import { formatMeetCode, isValidMeetCode } from "@/lib/meet-code";
 import { needsJoinProfile } from "@/lib/join-profile";
 import { getRoomSession, saveRoomSession } from "@/lib/room-session";
@@ -154,6 +155,8 @@ export function ClipboardSender({ code }: Props) {
       html: draft.html,
       source: "mobile",
       author: displayName,
+      authorAvatar: getAvatarEmoji(avatarId),
+      authorDeviceFingerprint: deviceId ?? undefined,
     });
     if (!payload) return;
     setLastMessageId(payload.id);

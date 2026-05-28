@@ -12,6 +12,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 import { useRoomMembers } from "@/hooks/use-room-members";
+import { hostToast } from "@/lib/hook-copy";
 import type { RoomMember } from "@/lib/meetings";
 import { toolbarControl } from "@/lib/ui";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,7 @@ type Props = {
   triggerClassName?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  onHostToast?: (message: string) => void;
 };
 
 function AvatarStack({ members, total }: { members: RoomMember[]; total: number }) {
@@ -131,7 +133,7 @@ function MemberRow({
             type="button"
             disabled={acting}
             onClick={onApprove}
-            className="flex size-10 items-center justify-center rounded-md bg-accent text-accent-foreground hover:bg-accent/80 disabled:opacity-50 touch-manipulation sm:size-7"
+            className="relative z-10 flex size-10 items-center justify-center rounded-md bg-accent text-accent-foreground hover:bg-accent/80 disabled:opacity-50 touch-manipulation sm:size-8"
             aria-label={`Approve ${member.display_name}`}
           >
             {acting ? (
@@ -144,7 +146,7 @@ function MemberRow({
             type="button"
             disabled={acting}
             onClick={onReject}
-            className="flex size-10 items-center justify-center rounded-md bg-destructive/15 text-destructive hover:bg-destructive/25 disabled:opacity-50 touch-manipulation sm:size-7"
+            className="relative z-10 flex size-10 items-center justify-center rounded-md bg-destructive/15 text-destructive hover:bg-destructive/25 disabled:opacity-50 touch-manipulation sm:size-8"
             aria-label={`Decline ${member.display_name}`}
           >
             <X className="size-3.5" />
@@ -164,6 +166,7 @@ export function ParticipantsMenu({
   triggerClassName,
   open: openControlled,
   onOpenChange,
+  onHostToast,
 }: Props) {
   const {
     sortedMembers,
@@ -185,6 +188,7 @@ export function ParticipantsMenu({
   const setOpen = onOpenChange ?? setOpenInternal;
   const [actingId, setActingId] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -193,7 +197,13 @@ export function ParticipantsMenu({
       if (e.key === "Escape") setOpen(false);
     };
     const onPointerDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (
+        !rootRef.current?.contains(target) &&
+        !panelRef.current?.contains(target)
+      ) {
+        setOpen(false);
+      }
     };
 
     document.addEventListener("keydown", onKeyDown);
@@ -210,19 +220,21 @@ export function ParticipantsMenu({
 
   const needsScroll = sortedMembers.length > SCROLL_THRESHOLD;
 
-  const handleApprove = async (fp: string) => {
+  const handleApprove = async (fp: string, name: string) => {
     setActingId(fp);
     try {
       await approve(fp);
+      onHostToast?.(hostToast.approved(name));
     } finally {
       setActingId(null);
     }
   };
 
-  const handleReject = async (fp: string) => {
+  const handleReject = async (fp: string, name: string) => {
     setActingId(fp);
     try {
       await reject(fp);
+      onHostToast?.(hostToast.declined(name));
     } finally {
       setActingId(null);
     }
@@ -242,7 +254,7 @@ export function ParticipantsMenu({
         )}
         aria-expanded={open}
         aria-haspopup="listbox"
-        aria-label={`${displayCount} participant${displayCount === 1 ? "" : "s"} in room`}
+        aria-label={`People — ${displayCount} in session`}
       >
         <Users className="size-4 shrink-0 text-primary sm:size-3.5" aria-hidden />
         {loading ? (
@@ -271,6 +283,7 @@ export function ParticipantsMenu({
 
       {open && (
         <div
+          ref={panelRef}
           className={cn(
             "z-50 overflow-hidden rounded-xl border border-border bg-card shadow-none",
             "fixed inset-x-3 top-[calc(3.5rem+env(safe-area-inset-top,0px))] max-h-[min(70dvh,24rem)] overflow-y-auto overscroll-contain sm:inset-x-4",
@@ -319,12 +332,20 @@ export function ParticipantsMenu({
                   acting={actingId === m.device_fingerprint}
                   onApprove={
                     isHost && m.status === "pending"
-                      ? () => void handleApprove(m.device_fingerprint)
+                      ? () =>
+                          void handleApprove(
+                            m.device_fingerprint,
+                            m.display_name
+                          )
                       : undefined
                   }
                   onReject={
                     isHost && m.status === "pending"
-                      ? () => void handleReject(m.device_fingerprint)
+                      ? () =>
+                          void handleReject(
+                            m.device_fingerprint,
+                            m.display_name
+                          )
                       : undefined
                   }
                 />

@@ -32,6 +32,8 @@ export type ClipboardPayload = {
   id: string;
   source?: ClipboardPayloadSource;
   author?: string;
+  authorAvatar?: string;
+  authorDeviceFingerprint?: string;
   assignee?: ClipboardPayloadAssignee | null;
 };
 
@@ -54,6 +56,8 @@ export function createClipboardPayload(
     html?: string;
     source?: ClipboardPayloadSource;
     author?: string;
+    authorAvatar?: string;
+    authorDeviceFingerprint?: string;
     assignee?: ClipboardPayloadAssignee | null;
     id?: string;
     at?: number;
@@ -67,6 +71,8 @@ export function createClipboardPayload(
     id: options?.id ?? crypto.randomUUID(),
     source: options?.source,
     author: options?.author,
+    authorAvatar: options?.authorAvatar,
+    authorDeviceFingerprint: options?.authorDeviceFingerprint,
     assignee: options?.assignee,
   };
 }
@@ -115,6 +121,14 @@ export function decodeClipboardWireMessage(
             ? parsed.source
             : undefined,
         author: typeof parsed.author === "string" ? parsed.author : undefined,
+        authorAvatar:
+          typeof parsed.authorAvatar === "string"
+            ? parsed.authorAvatar
+            : undefined,
+        authorDeviceFingerprint:
+          typeof parsed.authorDeviceFingerprint === "string"
+            ? parsed.authorDeviceFingerprint
+            : undefined,
         assignee:
           parsed.assignee &&
           typeof parsed.assignee === "object" &&

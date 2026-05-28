@@ -22,6 +22,7 @@ type Props = {
   onLeave: () => void;
   participantsOpen?: boolean;
   onParticipantsOpenChange?: (open: boolean) => void;
+  onHostToast?: (message: string) => void;
 };
 
 export function SessionToolbar({
@@ -37,6 +38,7 @@ export function SessionToolbar({
   onLeave,
   participantsOpen,
   onParticipantsOpenChange,
+  onHostToast,
 }: Props) {
   return (
     <>
@@ -81,6 +83,7 @@ export function SessionToolbar({
               isHost={session.isHost}
               open={participantsOpen}
               onOpenChange={onParticipantsOpenChange}
+              onHostToast={onHostToast}
               triggerClassName={cn(touchTarget, "h-10 sm:h-9")}
             />
 

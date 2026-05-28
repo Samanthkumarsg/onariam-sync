@@ -58,8 +58,11 @@ export const pageShell =
 export const stackLayout = "flex min-h-0 flex-1 flex-col gap-3 sm:gap-4";
 
 /** Session board column: actions, optional footer, scrollable list */
-export const sessionInboxLayout =
+export const sessionBoardLayout =
   "flex min-h-0 min-w-0 flex-1 flex-col gap-3 sm:gap-4";
+
+/** @deprecated Use sessionBoardLayout */
+export const sessionInboxLayout = sessionBoardLayout;
 
 /** Minimum touch target (Fitts's law, WCAG 2.5.5) */
 export const touchTarget =

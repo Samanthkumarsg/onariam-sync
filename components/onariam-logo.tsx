@@ -4,11 +4,8 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   className?: string;
-  /** Header toolbar vs marketing hero */
   size?: "sm" | "md";
-  /** Link to home (default true) */
   href?: string | null;
-  /** Mark only — for dense toolbars */
   compact?: boolean;
 };
 
@@ -21,12 +18,12 @@ export function OnariamLogo({
   const mark = (
     <span
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-md bg-primary/15 font-semibold text-primary ring-1 ring-primary/25",
-        size === "sm" ? "size-7 text-xs" : "size-8 text-sm"
+        "flex shrink-0 items-center justify-center leading-none select-none",
+        size === "sm" ? "text-xl" : "text-2xl"
       )}
       aria-hidden
     >
-      O
+      🐻
     </span>
   );
 
@@ -57,18 +54,16 @@ export function OnariamLogo({
   );
 
   const rootClass = cn(
-    "flex items-center gap-2.5 transition-opacity hover:opacity-90",
+    "flex items-center gap-2 transition-opacity hover:opacity-90",
     className
   );
-
-  const ariaLabel = compact ? "Onariam Sync home" : undefined;
 
   if (href) {
     return (
       <Link
         href={href}
         className={rootClass}
-        aria-label={ariaLabel ?? "Onariam Sync home"}
+        aria-label="Onariam Sync home"
       >
         {content}
       </Link>

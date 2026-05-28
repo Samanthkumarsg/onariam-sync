@@ -1,10 +1,13 @@
 import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
 import type { ClipboardPayload } from "@/lib/clipboard-p2p";
 
-export type ClipboardInboxItem = ClipboardPayload & {
+export type ClipboardBoardItem = ClipboardPayload & {
   copiedToClipboard: boolean;
   assignee?: ClipboardAssignee | null;
 };
+
+/** @deprecated Use ClipboardBoardItem */
+export type ClipboardInboxItem = ClipboardBoardItem;
 
 const MAX_ITEMS = 50;
 const KEY_PREFIX = "onariam-clipboard-inbox:";
@@ -13,12 +16,12 @@ function storageKey(topic: string) {
   return `${KEY_PREFIX}${topic}`;
 }
 
-export function loadClipboardInbox(topic: string): ClipboardInboxItem[] {
+export function loadClipboardBoard(topic: string): ClipboardBoardItem[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(storageKey(topic));
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as ClipboardInboxItem[];
+    const parsed = JSON.parse(raw) as ClipboardBoardItem[];
     if (!Array.isArray(parsed)) return [];
     return parsed
       .filter((item) => item?.id && typeof item.text === "string")
@@ -28,7 +31,10 @@ export function loadClipboardInbox(topic: string): ClipboardInboxItem[] {
   }
 }
 
-export function saveClipboardInbox(topic: string, items: ClipboardInboxItem[]) {
+/** @deprecated Use loadClipboardBoard */
+export const loadClipboardInbox = loadClipboardBoard;
+
+export function saveClipboardBoard(topic: string, items: ClipboardBoardItem[]) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(
@@ -40,16 +46,22 @@ export function saveClipboardInbox(topic: string, items: ClipboardInboxItem[]) {
   }
 }
 
-export function clearClipboardInbox(topic: string) {
+/** @deprecated Use saveClipboardBoard */
+export const saveClipboardInbox = saveClipboardBoard;
+
+export function clearClipboardBoard(topic: string) {
   if (typeof window === "undefined") return;
   localStorage.removeItem(storageKey(topic));
 }
 
+/** @deprecated Use clearClipboardBoard */
+export const clearClipboardInbox = clearClipboardBoard;
+
 /** Prepend new items; update in place when the same id already exists (assignee / copied state). */
 export function mergeClipboardItem(
-  items: ClipboardInboxItem[],
-  incoming: ClipboardInboxItem
-): ClipboardInboxItem[] {
+  items: ClipboardBoardItem[],
+  incoming: ClipboardBoardItem
+): ClipboardBoardItem[] {
   const index = items.findIndex((item) => item.id === incoming.id);
   if (index === -1) {
     return [incoming, ...items].slice(0, MAX_ITEMS);
