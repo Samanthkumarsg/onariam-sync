@@ -1,6 +1,14 @@
 "use client";
 
-import { Check, ClipboardCheck, Copy, Download, FileIcon, Smartphone } from "lucide-react";
+import {
+  Check,
+  ClipboardCheck,
+  Copy,
+  Download,
+  FileIcon,
+  MessageSquare,
+  Smartphone,
+} from "lucide-react";
 
 import { MemberTagPicker } from "@/components/member-tag-picker";
 import { Button } from "@/components/ui/button";
@@ -8,10 +16,10 @@ import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
 import { resolveItemAuthor } from "@/lib/clipboard-author";
 import type { ClipboardBoardItem } from "@/lib/clipboard-inbox-storage";
 import { isFilePayload } from "@/lib/clipboard-p2p";
-import { fileTransferCopy } from "@/lib/hook-copy";
+import { fileTransferCopy, threadCopy } from "@/lib/hook-copy";
 import { formatFileSize } from "@/lib/ipfs";
 import type { RoomMember } from "@/lib/meetings";
-import { paperCard } from "@/lib/ui";
+import { btnGhost, paperCard, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -24,6 +32,10 @@ type Props = {
   onAssigneeChange?: (id: string, assignee: ClipboardAssignee | null) => void;
   onCopy: () => void;
   showAssignee?: boolean;
+  isReply?: boolean;
+  threadReplyCount?: number;
+  onReply?: () => void;
+  replyOpen?: boolean;
 };
 
 function sourceLabel(item: ClipboardBoardItem) {
@@ -43,6 +55,10 @@ export function ClipboardBoardItemCard({
   onAssigneeChange,
   onCopy,
   showAssignee = true,
+  isReply = false,
+  threadReplyCount = 0,
+  onReply,
+  replyOpen = false,
 }: Props) {
   const from = sourceLabel(item);
   const copied = item.copiedToClipboard;
@@ -53,24 +69,33 @@ export function ClipboardBoardItemCard({
   const isFile = isFilePayload(item);
 
   return (
-    <li
+    <article
       className={cn(
         paperCard,
-        "relative z-0 flex min-w-0 flex-col gap-2.5 p-3 sm:p-4",
-        isLatest && "paper-card--latest z-[1]",
-        highlightCopy && "paper-card--highlight"
+        "relative z-0 flex min-w-0 flex-col gap-2.5",
+        isReply ? "p-2.5 sm:p-3" : "p-3 sm:p-4",
+        isLatest && !isReply && "paper-card--latest z-[1]",
+        highlightCopy && "paper-card--highlight",
+        replyOpen && "ring-2 ring-primary/20"
       )}
       aria-label={
         isFile
           ? `File from ${author.displayName}`
-          : copied
-            ? `Pasted by ${author.displayName}, copied`
-            : `Pasted by ${author.displayName}`
+          : isReply
+            ? `Reply from ${author.displayName}`
+            : copied
+              ? `Pasted by ${author.displayName}, copied`
+              : `Pasted by ${author.displayName}`
       }
     >
       <div className="relative z-[1] flex min-w-0 gap-2.5 sm:gap-3">
         <span
-          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-elevated text-xl leading-none sm:size-9 sm:text-lg"
+          className={cn(
+            "flex shrink-0 items-center justify-center rounded-full bg-surface-elevated leading-none",
+            isReply
+              ? "size-8 text-base sm:size-7 sm:text-sm"
+              : "size-10 text-xl sm:size-9 sm:text-lg"
+          )}
           title={author.displayName}
           aria-hidden
         >
@@ -98,14 +123,20 @@ export function ClipboardBoardItemCard({
           ) : item.html ? (
             <div
               className={cn(
-                "clipboard-rich min-w-0 flex-1 line-clamp-3 font-[family-name:var(--font-display)] text-sm leading-relaxed text-foreground",
+                "clipboard-rich min-w-0 flex-1 font-[family-name:var(--font-display)] text-sm leading-relaxed text-foreground",
+                !isReply && "line-clamp-3",
                 "[&_p]:mb-1 [&_p:last-child]:mb-0",
                 "[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-4"
               )}
               dangerouslySetInnerHTML={{ __html: item.html }}
             />
           ) : (
-            <p className="min-w-0 flex-1 line-clamp-3 whitespace-pre-wrap break-words font-[family-name:var(--font-display)] text-sm leading-relaxed text-foreground">
+            <p
+              className={cn(
+                "min-w-0 flex-1 whitespace-pre-wrap break-words font-[family-name:var(--font-display)] text-sm leading-relaxed text-foreground",
+                !isReply && "line-clamp-3"
+              )}
+            >
               {item.text}
             </p>
           )}
@@ -141,8 +172,13 @@ export function ClipboardBoardItemCard({
         </div>
       </div>
 
-      <div className="relative z-[1] flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 border-t border-[#e5e1d8]/90 pt-2 pl-[2.875rem] text-[11px] text-ink-muted sm:pl-12">
-        {isLatest && (
+      <div
+        className={cn(
+          "relative z-[1] flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 border-t border-[#e5e1d8]/90 pt-2 text-[11px] text-ink-muted",
+          isReply ? "pl-10 sm:pl-9" : "pl-[2.875rem] sm:pl-12"
+        )}
+      >
+        {isLatest && !isReply && (
           <span className="rounded-sm border border-[#d9d4c8] bg-[#fdfcfa] px-1 py-px font-mono text-[10px] font-medium uppercase tracking-wide text-ink-muted">
             Latest
           </span>
@@ -157,6 +193,11 @@ export function ClipboardBoardItemCard({
               <Smartphone className="size-2.5 shrink-0" aria-hidden />
             ) : null}
             {from}
+          </span>
+        )}
+        {threadReplyCount > 0 && !isReply && (
+          <span className="text-muted-foreground">
+            {threadCopy.replies(threadReplyCount)}
           </span>
         )}
         {assignee && !canAssign && (
@@ -182,6 +223,22 @@ export function ClipboardBoardItemCard({
             Copied
           </span>
         ) : null}
+        {onReply && (
+          <button
+            type="button"
+            onClick={onReply}
+            className={cn(
+              btnGhost,
+              touchTarget,
+              "ml-auto inline-flex h-8 items-center gap-1 px-2",
+              replyOpen && "bg-surface-elevated text-foreground"
+            )}
+            aria-expanded={replyOpen}
+          >
+            <MessageSquare className="size-3 shrink-0" aria-hidden />
+            {threadCopy.reply}
+          </button>
+        )}
       </div>
 
       {canAssign && onAssigneeChange && (
@@ -194,7 +251,7 @@ export function ClipboardBoardItemCard({
           className="relative z-[1] min-w-0 space-y-0 [&>p:first-child]:hidden"
         />
       )}
-    </li>
+    </article>
   );
 }
 

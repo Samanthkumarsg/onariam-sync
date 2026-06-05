@@ -61,16 +61,19 @@ export function clearClipboardBoard(topic: string) {
 /** @deprecated Use clearClipboardBoard */
 export const clearClipboardInbox = clearClipboardBoard;
 
-/** Prepend new items; update in place when the same id already exists (assignee / copied state). */
+/** Prepend roots; append replies; update in place when the same id already exists. */
 export function mergeClipboardItem(
   items: ClipboardBoardItem[],
   incoming: ClipboardBoardItem
 ): ClipboardBoardItem[] {
   const index = items.findIndex((item) => item.id === incoming.id);
-  if (index === -1) {
-    return [incoming, ...items].slice(0, MAX_ITEMS);
+  if (index !== -1) {
+    const next = [...items];
+    next[index] = { ...next[index], ...incoming };
+    return next;
   }
-  const next = [...items];
-  next[index] = { ...next[index], ...incoming };
-  return next;
+  if (incoming.parentId) {
+    return [...items, incoming].slice(0, MAX_ITEMS);
+  }
+  return [incoming, ...items].slice(0, MAX_ITEMS);
 }

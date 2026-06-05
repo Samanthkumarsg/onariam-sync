@@ -116,6 +116,16 @@ export const fileTransferCopy = {
   ipfsCid: "IPFS",
 } as const;
 
+export const threadCopy = {
+  reply: "Reply",
+  replyingTo: "Replying…",
+  replyPlaceholder: "Write a reply…",
+  postReply: "Post reply",
+  cancel: "Cancel",
+  replies: (count: number) =>
+    count === 1 ? "1 reply" : `${count} replies`,
+} as const;
+
 export const hostToast = {
   pending: (count: number) =>
     count === 1

@@ -4,7 +4,7 @@ import { ClipboardCheck } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ClipboardCompose } from "@/components/clipboard-compose";
-import { ClipboardBoardItemCard } from "@/components/clipboard-board-item";
+import { BoardThread } from "@/components/board-thread";
 import { BoardEmptyState } from "@/components/board-empty-state";
 import { SessionToast } from "@/components/session-toast";
 import { LeaveSessionDialog } from "@/components/leave-session-dialog";
@@ -13,7 +13,10 @@ import { useClipboardP2p } from "@/hooks/use-clipboard-p2p";
 import { useClipboardRoomSync } from "@/hooks/use-clipboard-room-sync";
 import { useRoomMembers } from "@/hooks/use-room-members";
 import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
-import { isFilePayload, type ClipboardPayload } from "@/lib/clipboard-p2p";
+import { isFilePayload, createClipboardPayload, type ClipboardPayload } from "@/lib/clipboard-p2p";
+import { getRootBoardItems } from "@/lib/board-threads";
+import { textToEscapedHtml } from "@/lib/clipboard-html";
+import { getAvatarEmoji } from "@/lib/avatars";
 import { downloadIpfsFile } from "@/lib/ipfs";
 import {
   clearClipboardBoard,
@@ -79,6 +82,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
   const [pairOpen, setPairOpen] = useState(false);
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [hostToastMsg, setHostToastMsg] = useState<string | null>(null);
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
   const prevPendingCountRef = useRef(0);
 
   const { members, pendingMembers } = useRoomMembers(
@@ -174,6 +178,41 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
     [persistItems, roomSync]
   );
 
+  const rootItems = useMemo(() => getRootBoardItems(items), [items]);
+
+  const addReply = useCallback(
+    (parentId: string, text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+
+      const base = createClipboardPayload(trimmed, {
+        html: textToEscapedHtml(trimmed),
+        source: session.isHost ? "host" : "desktop",
+        author: session.displayName,
+        authorAvatar: getAvatarEmoji(session.avatarId),
+        authorDeviceFingerprint: session.deviceFingerprint,
+        parentId,
+      });
+
+      const item: ClipboardBoardItem = {
+        ...base,
+        copiedToClipboard: false,
+      };
+
+      addItem(item);
+      roomSync.publishUpsert(item);
+      setReplyingToId(null);
+    },
+    [
+      addItem,
+      roomSync,
+      session.avatarId,
+      session.deviceFingerprint,
+      session.displayName,
+      session.isHost,
+    ]
+  );
+
   useEffect(() => {
     const stored = loadClipboardBoard(session.topic);
     setItems(stored);
@@ -185,6 +224,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
       let copiedToClipboard = false;
       if (
         !isFilePayload(payload) &&
+        !payload.parentId &&
         autoCopy &&
         navigator.clipboard?.writeText
       ) {
@@ -383,17 +423,24 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
               className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pb-24 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin] sm:pb-8"
               aria-label="Session board items"
             >
-              {items.map((item, index) => (
-                <ClipboardBoardItemCard
+              {rootItems.map((item, index) => (
+                <BoardThread
                   key={`${item.id}-${item.at}`}
-                  item={item}
+                  root={item}
+                  allItems={items}
                   isLatest={index === 0}
                   highlightCopy={autoCopiedId === item.id}
-                  copying={copiedId === item.id}
+                  copyingId={copiedId}
                   members={members}
                   currentDeviceFingerprint={session.deviceFingerprint}
+                  replyingToId={replyingToId}
+                  onReplyClick={(id) =>
+                    setReplyingToId((current) => (current === id ? null : id))
+                  }
+                  onSubmitReply={addReply}
+                  onCancelReply={() => setReplyingToId(null)}
                   onAssigneeChange={updateAssignee}
-                  onCopy={() => void copyItem(item)}
+                  onCopy={(row) => void copyItem(row)}
                   showAssignee={showAssignee}
                 />
               ))}

@@ -28,6 +28,8 @@ export type ClipboardPayloadAssignee = {
 type ClipboardPayloadMeta = {
   at: number;
   id: string;
+  /** Reply target — points at the card being replied to */
+  parentId?: string;
   source?: ClipboardPayloadSource;
   author?: string;
   authorAvatar?: string;
@@ -79,6 +81,7 @@ export function createClipboardPayload(
     authorAvatar?: string;
     authorDeviceFingerprint?: string;
     assignee?: ClipboardPayloadAssignee | null;
+    parentId?: string;
     id?: string;
     at?: number;
   }
@@ -94,6 +97,7 @@ export function createClipboardPayload(
     authorAvatar: options?.authorAvatar,
     authorDeviceFingerprint: options?.authorDeviceFingerprint,
     assignee: options?.assignee,
+    parentId: options?.parentId,
   };
 }
 
@@ -105,6 +109,7 @@ export function createClipboardFilePayload(
     authorAvatar?: string;
     authorDeviceFingerprint?: string;
     assignee?: ClipboardPayloadAssignee | null;
+    parentId?: string;
     id?: string;
     at?: number;
   }
@@ -123,6 +128,7 @@ export function createClipboardFilePayload(
     authorAvatar: options?.authorAvatar,
     authorDeviceFingerprint: options?.authorDeviceFingerprint,
     assignee: options?.assignee,
+    parentId: options?.parentId,
   };
 }
 
@@ -161,6 +167,10 @@ function parsePayloadMeta(
     authorDeviceFingerprint:
       typeof parsed.authorDeviceFingerprint === "string"
         ? parsed.authorDeviceFingerprint
+        : undefined,
+    parentId:
+      typeof parsed.parentId === "string" && parsed.parentId.length > 0
+        ? parsed.parentId
         : undefined,
     assignee:
       parsed.assignee &&

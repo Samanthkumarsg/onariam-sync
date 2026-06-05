@@ -45,11 +45,13 @@ export function isInboxRoomMessage(
   }
   if (kind === "upsert") {
     const upsert = payload as ClipboardInboxUpsert;
+    const item = upsert.item;
     return (
       typeof upsert.from === "string" &&
-      upsert.item != null &&
-      typeof upsert.item.id === "string" &&
-      typeof upsert.item.text === "string"
+      item != null &&
+      typeof item.id === "string" &&
+      (typeof item.text === "string" ||
+        (item.type === "file" && typeof item.cid === "string"))
     );
   }
   return false;
