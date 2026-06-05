@@ -20,29 +20,19 @@ export function getDirectReplies(
     .sort((a, b) => a.at - b.at);
 }
 
-/** All replies under a root, depth-first, oldest first within each level. */
-export function getThreadReplyList(
+/** Walk up the parent chain to see if itemId belongs under rootId. */
+export function isInThreadBranch(
   items: ClipboardBoardItem[],
-  rootId: string
-): ClipboardBoardItem[] {
-  const byParent = new Map<string, ClipboardBoardItem[]>();
-  for (const item of items) {
-    if (!item.parentId) continue;
-    const list = byParent.get(item.parentId) ?? [];
-    list.push(item);
-    byParent.set(item.parentId, list);
+  rootId: string,
+  itemId: string
+): boolean {
+  const byId = new Map(items.map((item) => [item.id, item]));
+  let id: string | undefined = itemId;
+  while (id) {
+    if (id === rootId) return true;
+    id = byId.get(id)?.parentId;
   }
-
-  const out: ClipboardBoardItem[] = [];
-  const walk = (id: string) => {
-    const children = (byParent.get(id) ?? []).sort((a, b) => a.at - b.at);
-    for (const child of children) {
-      out.push(child);
-      walk(child.id);
-    }
-  };
-  walk(rootId);
-  return out;
+  return false;
 }
 
 export function countThreadReplies(

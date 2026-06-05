@@ -9,7 +9,8 @@ import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
 import type { ClipboardBoardItem } from "@/lib/clipboard-inbox-storage";
 import {
   countThreadReplies,
-  getThreadReplyList,
+  getDirectReplies,
+  isInThreadBranch,
 } from "@/lib/board-threads";
 import { threadCopy } from "@/lib/hook-copy";
 import type { RoomMember } from "@/lib/meetings";
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils";
 type Props = {
   root: ClipboardBoardItem;
   allItems: ClipboardBoardItem[];
+  depth?: number;
   isLatest?: boolean;
   highlightCopy?: boolean;
   copyingId?: string | null;
@@ -36,6 +38,7 @@ type Props = {
 export function BoardThread({
   root,
   allItems,
+  depth = 0,
   isLatest = false,
   highlightCopy = false,
   copyingId = null,
@@ -49,44 +52,59 @@ export function BoardThread({
   onCopy,
   showAssignee = true,
 }: Props) {
-  const replies = getThreadReplyList(allItems, root.id);
-  const threadReplyCount = countThreadReplies(allItems, root.id);
-  const [repliesOpen, setRepliesOpen] = useState(threadReplyCount <= 1);
+  const replies = getDirectReplies(allItems, root.id);
+  const threadReplyCount =
+    depth === 0 ? countThreadReplies(allItems, root.id) : 0;
+  const nestedReplyCount = replies.length;
+  const isReply = depth > 0;
+  const isRoot = depth === 0;
+  const [repliesOpen, setRepliesOpen] = useState(
+    isRoot ? threadReplyCount <= 1 : true
+  );
 
   useEffect(() => {
-    if (
-      replyingToId &&
-      (replyingToId === root.id || replies.some((r) => r.id === replyingToId))
-    ) {
+    if (!isRoot || !replyingToId) return;
+    if (isInThreadBranch(allItems, root.id, replyingToId)) {
       setRepliesOpen(true);
     }
-  }, [replyingToId, root.id, replies]);
+  }, [allItems, isRoot, replyingToId, root.id]);
+
+  const showReplies = !isRoot || repliesOpen;
 
   return (
-    <li className="flex min-w-0 flex-col gap-1.5">
+    <li
+      className={cn(
+        "flex min-w-0 flex-col gap-1.5",
+        isReply && "relative min-w-0"
+      )}
+    >
       <ClipboardBoardItemCard
         item={root}
-        isLatest={isLatest}
+        isLatest={isLatest && isRoot}
         highlightCopy={highlightCopy}
         copying={copyingId === root.id}
         members={members}
         currentDeviceFingerprint={currentDeviceFingerprint}
         onAssigneeChange={onAssigneeChange}
         onCopy={() => onCopy(root)}
-        showAssignee={showAssignee}
+        showAssignee={showAssignee && isRoot}
+        isReply={isReply}
+        replyDepth={depth}
         threadReplyCount={threadReplyCount}
+        nestedReplyCount={isReply ? nestedReplyCount : 0}
         onReply={() => onReplyClick(root.id)}
         replyOpen={replyingToId === root.id}
       />
 
       {replyingToId === root.id && (
         <BoardReplyComposer
+          className={cn(isReply && "ml-0.5 sm:ml-1")}
           onSubmit={(text) => onSubmitReply(root.id, text)}
           onCancel={onCancelReply}
         />
       )}
 
-      {threadReplyCount > 0 && (
+      {isRoot && threadReplyCount > 0 && (
         <button
           type="button"
           onClick={() => setRepliesOpen((open) => !open)}
@@ -111,33 +129,33 @@ export function BoardThread({
         </button>
       )}
 
-      {repliesOpen && replies.length > 0 && (
+      {showReplies && replies.length > 0 && (
         <ul
-          className="flex min-w-0 flex-col gap-1.5 border-l border-border/60 pl-2.5 sm:pl-3"
-          aria-label="Replies"
+          className={cn(
+            "flex min-w-0 flex-col gap-1.5 border-l-2 border-border/70",
+            isRoot
+              ? "ml-3 pl-2.5 sm:ml-4 sm:pl-3"
+              : "ml-2 pl-2 sm:ml-2.5 sm:pl-2.5"
+          )}
+          aria-label={isRoot ? "Replies" : "Sub-replies"}
         >
           {replies.map((reply) => (
-            <li key={reply.id} className="flex min-w-0 flex-col gap-1.5">
-              <ClipboardBoardItemCard
-                item={reply}
-                isLatest={false}
-                copying={copyingId === reply.id}
-                members={members}
-                currentDeviceFingerprint={currentDeviceFingerprint}
-                onCopy={() => onCopy(reply)}
-                showAssignee={false}
-                isReply
-                onReply={() => onReplyClick(reply.id)}
-                replyOpen={replyingToId === reply.id}
-              />
-
-              {replyingToId === reply.id && (
-                <BoardReplyComposer
-                  onSubmit={(text) => onSubmitReply(reply.id, text)}
-                  onCancel={onCancelReply}
-                />
-              )}
-            </li>
+            <BoardThread
+              key={reply.id}
+              root={reply}
+              allItems={allItems}
+              depth={depth + 1}
+              copyingId={copyingId}
+              members={members}
+              currentDeviceFingerprint={currentDeviceFingerprint}
+              replyingToId={replyingToId}
+              onReplyClick={onReplyClick}
+              onSubmitReply={onSubmitReply}
+              onCancelReply={onCancelReply}
+              onAssigneeChange={onAssigneeChange}
+              onCopy={onCopy}
+              showAssignee={false}
+            />
           ))}
         </ul>
       )}

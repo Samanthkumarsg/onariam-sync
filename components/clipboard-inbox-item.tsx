@@ -33,7 +33,9 @@ type Props = {
   onCopy: () => void;
   showAssignee?: boolean;
   isReply?: boolean;
+  replyDepth?: number;
   threadReplyCount?: number;
+  nestedReplyCount?: number;
   onReply?: () => void;
   replyOpen?: boolean;
 };
@@ -56,7 +58,9 @@ export function ClipboardBoardItemCard({
   onCopy,
   showAssignee = true,
   isReply = false,
+  replyDepth = 0,
   threadReplyCount = 0,
+  nestedReplyCount = 0,
   onReply,
   replyOpen = false,
 }: Props) {
@@ -67,13 +71,19 @@ export function ClipboardBoardItemCard({
   const canAssign =
     showAssignee && members.length > 0 && Boolean(onAssigneeChange);
   const isFile = isFilePayload(item);
+  const depth = isReply ? Math.max(replyDepth, 1) : 0;
+  const compactReply = depth >= 2;
 
   return (
     <article
       className={cn(
         paperCard,
         "relative z-0 flex min-w-0 flex-col",
-        isReply ? "gap-1.5 p-2" : "gap-2.5 p-3 sm:p-4",
+        isReply
+          ? compactReply
+            ? "gap-1 p-1.5"
+            : "gap-1.5 p-2"
+          : "gap-2.5 p-3 sm:p-4",
         isLatest && !isReply && "paper-card--latest z-[1]",
         highlightCopy && "paper-card--highlight",
         replyOpen && "ring-2 ring-primary/20"
@@ -93,7 +103,9 @@ export function ClipboardBoardItemCard({
           className={cn(
             "flex shrink-0 items-center justify-center rounded-full bg-surface-elevated leading-none",
             isReply
-              ? "size-7 text-sm"
+              ? compactReply
+                ? "size-6 text-xs"
+                : "size-7 text-sm"
               : "size-10 text-xl sm:size-9 sm:text-lg"
           )}
           title={author.displayName}
@@ -207,6 +219,11 @@ export function ClipboardBoardItemCard({
         {threadReplyCount > 0 && !isReply && (
           <span className="text-muted-foreground">
             {threadCopy.replies(threadReplyCount)}
+          </span>
+        )}
+        {nestedReplyCount > 0 && isReply && (
+          <span className="text-muted-foreground">
+            {threadCopy.replies(nestedReplyCount)}
           </span>
         )}
         {assignee && !canAssign && (
