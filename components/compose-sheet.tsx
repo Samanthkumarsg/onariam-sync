@@ -2,14 +2,6 @@
 
 import { X } from "lucide-react";
 
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import { useIsMobile } from "@/hooks/use-is-mobile";
 import { touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +14,8 @@ type Props = {
   className?: string;
 };
 
-function ComposeModal({
+/** Centered compose modal — same on all viewport sizes. */
+export function ComposeSheet({
   open,
   onOpenChange,
   title,
@@ -80,34 +73,4 @@ function ComposeModal({
       </div>
     </div>
   );
-}
-
-/** Mobile: bottom drawer. Desktop: centered modal. */
-export function ComposeSheet(props: Props) {
-  const isMobile = useIsMobile();
-
-  if (isMobile) {
-    return (
-      <Drawer open={props.open} onOpenChange={props.onOpenChange}>
-        <DrawerContent
-          className={cn(
-            "max-h-[min(92dvh,720px)] border-border/60 bg-card pb-safe",
-            props.className
-          )}
-        >
-          <DrawerHeader className="border-b border-border pb-3 text-left">
-            <DrawerTitle>{props.title}</DrawerTitle>
-            {props.description ? (
-              <DrawerDescription>{props.description}</DrawerDescription>
-            ) : null}
-          </DrawerHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-safe pt-1 [-webkit-overflow-scrolling:touch]">
-            {props.children}
-          </div>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
-  return <ComposeModal {...props} />;
 }
