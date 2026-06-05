@@ -13,7 +13,8 @@ import { useClipboardP2p } from "@/hooks/use-clipboard-p2p";
 import { useClipboardRoomSync } from "@/hooks/use-clipboard-room-sync";
 import { useRoomMembers } from "@/hooks/use-room-members";
 import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
-import type { ClipboardPayload } from "@/lib/clipboard-p2p";
+import { isFilePayload, type ClipboardPayload } from "@/lib/clipboard-p2p";
+import { downloadIpfsFile } from "@/lib/ipfs";
 import {
   clearClipboardBoard,
   loadClipboardBoard,
@@ -182,7 +183,11 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
   const handleReceive = useCallback(
     async (payload: ClipboardPayload) => {
       let copiedToClipboard = false;
-      if (autoCopy && navigator.clipboard?.writeText) {
+      if (
+        !isFilePayload(payload) &&
+        autoCopy &&
+        navigator.clipboard?.writeText
+      ) {
         try {
           await navigator.clipboard.writeText(payload.text);
           copiedToClipboard = true;
@@ -214,7 +219,11 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
 
   const copyItem = async (item: ClipboardBoardItem) => {
     try {
-      await navigator.clipboard.writeText(item.text);
+      if (isFilePayload(item)) {
+        await downloadIpfsFile(item.cid, item.name);
+      } else {
+        await navigator.clipboard.writeText(item.text);
+      }
       setCopiedId(item.id);
       persistItems(
         itemsRef.current.map((row) =>
@@ -412,18 +421,21 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
           roomSync.publishUpsert(item);
         }}
         onBroadcast={(item) => {
-          if (phoneLinked) {
-            p2p.sendPayload(item.text, {
-              html: item.html,
-              source: item.source,
-              author: item.author,
-              authorAvatar: item.authorAvatar,
-              authorDeviceFingerprint: item.authorDeviceFingerprint,
-              assignee: item.assignee,
-              id: item.id,
-              at: item.at,
-            });
+          if (!phoneLinked) return;
+          if (isFilePayload(item)) {
+            p2p.sendClipboardPayload(item);
+            return;
           }
+          p2p.sendPayload(item.text, {
+            html: item.html,
+            source: item.source,
+            author: item.author,
+            authorAvatar: item.authorAvatar,
+            authorDeviceFingerprint: item.authorDeviceFingerprint,
+            assignee: item.assignee,
+            id: item.id,
+            at: item.at,
+          });
         }}
       />
     </div>

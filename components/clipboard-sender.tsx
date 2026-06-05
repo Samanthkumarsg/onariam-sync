@@ -7,6 +7,7 @@ import {
   ClipboardEditor,
   type ClipboardEditorValue,
 } from "@/components/clipboard-editor";
+import { FileAttachButton } from "@/components/file-attach-button";
 import { JoinSessionProfile } from "@/components/join-session-profile";
 import { OnariamLogo } from "@/components/onariam-logo";
 import { WaitingForHost } from "@/components/waiting-for-host";
@@ -15,8 +16,10 @@ import { useClipboardP2p } from "@/hooks/use-clipboard-p2p";
 import { useDeviceId } from "@/hooks/use-device-id";
 import type { AvatarId } from "@/lib/avatars";
 import { getAvatarEmoji } from "@/lib/avatars";
+import { createClipboardFilePayload } from "@/lib/clipboard-p2p";
 import { textToEscapedHtml } from "@/lib/clipboard-html";
 import { readSystemClipboardText } from "@/lib/clipboard-read";
+import type { IpfsFileMeta } from "@/lib/ipfs";
 import { formatMeetCode, isValidMeetCode } from "@/lib/meet-code";
 import { needsJoinProfile } from "@/lib/join-profile";
 import { getRoomSession, saveRoomSession } from "@/lib/room-session";
@@ -57,6 +60,7 @@ export function ClipboardSender({ code }: Props) {
   const [avatarId, setAvatarId] = useState<AvatarId>("fox");
   const [joinError, setJoinError] = useState<string | null>(null);
   const [profileReady, setProfileReady] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const approved = memberStatus === "approved";
   const showProfileGate =
@@ -149,6 +153,14 @@ export function ClipboardSender({ code }: Props) {
     setEditorKey((k) => k + 1);
   }, []);
 
+  const markSent = useCallback((id: string) => {
+    setLastMessageId(id);
+    setSendState("sent");
+    setTimeout(() => {
+      setSendState((s) => (s === "sent" ? "delivered" : s));
+    }, 800);
+  }, []);
+
   const handleSend = useCallback(() => {
     const payload = p2p.sendPayload(draft.text, {
       html: draft.html,
@@ -158,15 +170,28 @@ export function ClipboardSender({ code }: Props) {
       authorDeviceFingerprint: deviceId ?? undefined,
     });
     if (!payload) return;
-    setLastMessageId(payload.id);
-    setSendState("sent");
+    markSent(payload.id);
     setDraft({ html: "", text: "" });
     setEditorSeed("");
     setEditorKey((k) => k + 1);
-    setTimeout(() => {
-      setSendState((s) => (s === "sent" ? "delivered" : s));
-    }, 800);
-  }, [p2p, draft, displayName]);
+  }, [p2p, draft, displayName, avatarId, deviceId, markSent]);
+
+  const handleFileReady = useCallback(
+    (file: IpfsFileMeta) => {
+      setFileError(null);
+      const payload = p2p.sendClipboardPayload(
+        createClipboardFilePayload(file, {
+          source: "mobile",
+          author: displayName,
+          authorAvatar: getAvatarEmoji(avatarId),
+          authorDeviceFingerprint: deviceId ?? undefined,
+        })
+      );
+      if (!payload) return;
+      markSent(payload.id);
+    },
+    [p2p, displayName, avatarId, deviceId, markSent]
+  );
 
   if (!valid) {
     return (
@@ -342,6 +367,15 @@ export function ClipboardSender({ code }: Props) {
 
           <div className="sticky bottom-0 shrink-0 border-t border-border bg-card px-3 pb-safe pt-3 sm:static sm:border-0 sm:bg-transparent sm:px-4 sm:pb-0">
             <div className="flex flex-col gap-2">
+              <FileAttachButton
+                onFileReady={handleFileReady}
+                onError={setFileError}
+                disabled={!connected}
+                className="w-full justify-center"
+              />
+              {fileError ? (
+                <p className="text-center text-xs text-destructive">{fileError}</p>
+              ) : null}
               <Button
                 type="button"
                 className={cn(touchTarget, "h-12 w-full")}
@@ -362,8 +396,8 @@ export function ClipboardSender({ code }: Props) {
         </div>
 
         <p className="shrink-0 py-4 text-center text-xs leading-relaxed text-muted-foreground pb-safe">
-          Transfers go directly to your computer (peer-to-peer). Nothing is saved
-          on our servers.
+          Text goes peer-to-peer. Files upload to IPFS, then the CID is sent to
+          your computer.
         </p>
       </div>
     </div>

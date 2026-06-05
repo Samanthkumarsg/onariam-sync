@@ -106,6 +106,14 @@ export const rewardToast = {
   copiedToClipboard: "Copied to clipboard",
   latestAutoCopy: "Latest paste copied for you",
   addedToBoard: "Pasted to board",
+  fileAdded: "File added to board",
+  fileSent: "File sent",
+} as const;
+
+export const fileTransferCopy = {
+  attach: "Attach file",
+  download: "Download",
+  ipfsCid: "IPFS",
 } as const;
 
 export const hostToast = {

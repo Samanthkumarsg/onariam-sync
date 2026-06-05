@@ -24,7 +24,11 @@ export function loadClipboardBoard(topic: string): ClipboardBoardItem[] {
     const parsed = JSON.parse(raw) as ClipboardBoardItem[];
     if (!Array.isArray(parsed)) return [];
     return parsed
-      .filter((item) => item?.id && typeof item.text === "string")
+      .filter((item) => {
+        if (!item?.id) return false;
+        if (item.type === "file") return typeof item.cid === "string";
+        return typeof item.text === "string";
+      })
       .slice(0, MAX_ITEMS);
   } catch {
     return [];

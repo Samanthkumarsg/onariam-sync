@@ -15,6 +15,7 @@ import {
   type ClipboardPeerRole,
   type ClipboardPayload,
   type ClipboardSignalMessage,
+  type ClipboardTextPayload,
 } from "@/lib/clipboard-p2p";
 
 export type ClipboardConnectionStatus =
@@ -115,8 +116,11 @@ export function useClipboardP2p({
       if (typeof ev.data !== "string") return;
       const msg = decodeClipboardWireMessage(ev.data);
       if (!msg) return;
-      if (msg.type === "text") onReceiveRef.current?.(msg);
-      else onAckRef.current?.(msg);
+      if (msg.type === "text" || msg.type === "file") {
+        onReceiveRef.current?.(msg);
+      } else if (msg.type === "ack") {
+        onAckRef.current?.(msg);
+      }
     };
   }, []);
 
@@ -275,20 +279,16 @@ export function useClipboardP2p({
     ]
   );
 
-  const sendPayload = useCallback(
-    (
-      text: string,
-      options?: Parameters<typeof createClipboardPayload>[1]
-    ): ClipboardPayload | null => {
-      const trimmed = text.trim();
-      if (!trimmed) return null;
+  const sendClipboardPayload = useCallback(
+    (payload: ClipboardPayload): ClipboardPayload | null => {
       const dc = dcRef.current;
       if (!dc || dc.readyState !== "open") {
         setError("Not connected yet");
         return null;
       }
+      if (payload.type === "text" && !payload.text.trim()) return null;
+      if (payload.type === "file" && !payload.cid) return null;
       try {
-        const payload = createClipboardPayload(trimmed, options);
         dc.send(JSON.stringify(payload));
         setError(null);
         return payload;
@@ -298,6 +298,19 @@ export function useClipboardP2p({
       }
     },
     []
+  );
+
+  const sendPayload = useCallback(
+    (
+      text: string,
+      options?: Parameters<typeof createClipboardPayload>[1]
+    ): ClipboardTextPayload | null => {
+      const trimmed = text.trim();
+      if (!trimmed) return null;
+      const payload = createClipboardPayload(trimmed, options);
+      return sendClipboardPayload(payload) as ClipboardTextPayload | null;
+    },
+    [sendClipboardPayload]
   );
 
   const sendText = useCallback(
@@ -397,5 +410,14 @@ export function useClipboardP2p({
     return () => clearTimeout(id);
   }, [code, enabled, role]);
 
-  return { status, error, sendText, sendPayload, sendAck, onReceive, onAck };
+  return {
+    status,
+    error,
+    sendText,
+    sendPayload,
+    sendClipboardPayload,
+    sendAck,
+    onReceive,
+    onAck,
+  };
 }

@@ -3,6 +3,7 @@
 import { Plus, X } from "lucide-react";
 import { useCallback, useId, useState } from "react";
 
+import { FileAttachButton } from "@/components/file-attach-button";
 import { PasteFab } from "@/components/paste-fab";
 import {
   ClipboardEditor,
@@ -19,7 +20,11 @@ import { readSystemClipboardText } from "@/lib/clipboard-read";
 import type { AvatarId } from "@/lib/avatars";
 import { getAvatarEmoji } from "@/lib/avatars";
 import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
-import { createClipboardPayload } from "@/lib/clipboard-p2p";
+import {
+  createClipboardFilePayload,
+  createClipboardPayload,
+} from "@/lib/clipboard-p2p";
+import type { IpfsFileMeta } from "@/lib/ipfs";
 import type { ClipboardBoardItem } from "@/lib/clipboard-inbox-storage";
 import type { RoomMember } from "@/lib/meetings";
 import { touchTarget } from "@/lib/ui";
@@ -70,6 +75,7 @@ export function ClipboardCompose({
   const [editorKey, setEditorKey] = useState(0);
   const [editorSeed, setEditorSeed] = useState("");
   const [assignee, setAssignee] = useState<ClipboardAssignee | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const applyClipboardText = useCallback((clip: string) => {
     const html = textToEscapedHtml(clip);
@@ -124,6 +130,45 @@ export function ClipboardCompose({
       onBroadcast,
       textToEscapedHtml,
     ]
+  );
+
+  const addFileToBoard = useCallback(
+    (file: IpfsFileMeta, itemAssignee: ClipboardAssignee | null = null) => {
+      const base = createClipboardFilePayload(file, {
+        source: isHost ? "host" : "desktop",
+        author: displayName,
+        authorAvatar: getAvatarEmoji(avatarId),
+        authorDeviceFingerprint: deviceFingerprint,
+        assignee: itemAssignee,
+      });
+
+      const item: ClipboardBoardItem = {
+        ...base,
+        copiedToClipboard: false,
+        assignee: itemAssignee,
+      };
+
+      onAdd(item);
+      onBroadcast?.(item);
+      return true;
+    },
+    [
+      avatarId,
+      deviceFingerprint,
+      displayName,
+      isHost,
+      onAdd,
+      onBroadcast,
+    ]
+  );
+
+  const handleFileReady = useCallback(
+    (file: IpfsFileMeta) => {
+      setFileError(null);
+      addFileToBoard(file, assignee);
+      onQuickPaste?.();
+    },
+    [addFileToBoard, assignee, onQuickPaste]
   );
 
   const pasteQuickToBoard = useCallback(async () => {
@@ -204,6 +249,16 @@ export function ClipboardCompose({
                 onChange={setDraft}
                 onPasteFromClipboard={() => void pasteFromSystem()}
               />
+
+              <div className="flex flex-wrap items-center gap-2">
+                <FileAttachButton
+                  onFileReady={handleFileReady}
+                  onError={setFileError}
+                />
+                {fileError ? (
+                  <p className="text-xs text-destructive">{fileError}</p>
+                ) : null}
+              </div>
 
               {showAssignee && (
                 <MemberTagPicker

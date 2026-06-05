@@ -1,12 +1,15 @@
 "use client";
 
-import { Check, ClipboardCheck, Copy, Smartphone } from "lucide-react";
+import { Check, ClipboardCheck, Copy, Download, FileIcon, Smartphone } from "lucide-react";
 
 import { MemberTagPicker } from "@/components/member-tag-picker";
 import { Button } from "@/components/ui/button";
 import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
 import { resolveItemAuthor } from "@/lib/clipboard-author";
 import type { ClipboardBoardItem } from "@/lib/clipboard-inbox-storage";
+import { isFilePayload } from "@/lib/clipboard-p2p";
+import { fileTransferCopy } from "@/lib/hook-copy";
+import { formatFileSize } from "@/lib/ipfs";
 import type { RoomMember } from "@/lib/meetings";
 import { paperCard } from "@/lib/ui";
 import { cn } from "@/lib/utils";
@@ -47,6 +50,7 @@ export function ClipboardBoardItemCard({
   const author = resolveItemAuthor(item, members);
   const canAssign =
     showAssignee && members.length > 0 && Boolean(onAssigneeChange);
+  const isFile = isFilePayload(item);
 
   return (
     <li
@@ -57,9 +61,11 @@ export function ClipboardBoardItemCard({
         highlightCopy && "paper-card--highlight"
       )}
       aria-label={
-        copied
-          ? `Pasted by ${author.displayName}, copied`
-          : `Pasted by ${author.displayName}`
+        isFile
+          ? `File from ${author.displayName}`
+          : copied
+            ? `Pasted by ${author.displayName}, copied`
+            : `Pasted by ${author.displayName}`
       }
     >
       <div className="relative z-[1] flex min-w-0 gap-2.5 sm:gap-3">
@@ -71,37 +77,67 @@ export function ClipboardBoardItemCard({
           {author.emoji}
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:gap-2.5">
-        {item.html ? (
-          <div
-            className={cn(
-              "clipboard-rich min-w-0 flex-1 line-clamp-3 font-[family-name:var(--font-display)] text-sm leading-relaxed text-foreground",
-              "[&_p]:mb-1 [&_p:last-child]:mb-0",
-              "[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-4"
-            )}
-            dangerouslySetInnerHTML={{ __html: item.html }}
-          />
-        ) : (
-          <p className="min-w-0 flex-1 line-clamp-3 whitespace-pre-wrap break-words font-[family-name:var(--font-display)] text-sm leading-relaxed text-foreground">
-            {item.text}
-          </p>
-        )}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-10 shrink-0 gap-1 self-end sm:h-8 sm:px-2.5"
-          aria-label={copied ? "Copy again" : "Copy to clipboard"}
-          onClick={onCopy}
-        >
-          {copying ? (
-            <Check className="size-3.5 shrink-0" aria-hidden />
+          {isFile ? (
+            <div className="flex min-w-0 flex-1 items-start gap-2.5">
+              <FileIcon
+                className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-[family-name:var(--font-display)] text-sm font-medium text-foreground">
+                  {item.name}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {formatFileSize(item.size)}
+                  <span className="mx-1">·</span>
+                  <span className="font-mono">{fileTransferCopy.ipfsCid}</span>
+                  <span className="ml-1 truncate">{item.cid.slice(0, 12)}…</span>
+                </p>
+              </div>
+            </div>
+          ) : item.html ? (
+            <div
+              className={cn(
+                "clipboard-rich min-w-0 flex-1 line-clamp-3 font-[family-name:var(--font-display)] text-sm leading-relaxed text-foreground",
+                "[&_p]:mb-1 [&_p:last-child]:mb-0",
+                "[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-4"
+              )}
+              dangerouslySetInnerHTML={{ __html: item.html }}
+            />
           ) : (
-            <Copy className="size-3.5 shrink-0" aria-hidden />
+            <p className="min-w-0 flex-1 line-clamp-3 whitespace-pre-wrap break-words font-[family-name:var(--font-display)] text-sm leading-relaxed text-foreground">
+              {item.text}
+            </p>
           )}
-          <span className="sr-only">
-            {copied ? "Copy again" : "Copy to clipboard"}
-          </span>
-        </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-10 shrink-0 gap-1 self-end sm:h-8 sm:px-2.5"
+            aria-label={
+              isFile
+                ? fileTransferCopy.download
+                : copied
+                  ? "Copy again"
+                  : "Copy to clipboard"
+            }
+            onClick={onCopy}
+          >
+            {copying ? (
+              <Check className="size-3.5 shrink-0" aria-hidden />
+            ) : isFile ? (
+              <Download className="size-3.5 shrink-0" aria-hidden />
+            ) : (
+              <Copy className="size-3.5 shrink-0" aria-hidden />
+            )}
+            <span className="sr-only">
+              {isFile
+                ? fileTransferCopy.download
+                : copied
+                  ? "Copy again"
+                  : "Copy to clipboard"}
+            </span>
+          </Button>
         </div>
       </div>
 
@@ -140,7 +176,7 @@ export function ClipboardBoardItemCard({
             minute: "2-digit",
           })}
         </time>
-        {copied ? (
+        {copied && !isFile ? (
           <span className="inline-flex items-center gap-0.5 text-accent-foreground">
             <ClipboardCheck className="size-2.5 shrink-0" aria-hidden />
             Copied
