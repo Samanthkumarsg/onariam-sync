@@ -1,13 +1,10 @@
 "use client";
 
-import { Check, Loader2, Send } from "lucide-react";
+import { Check, ClipboardPaste, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
-import {
-  ClipboardEditor,
-  type ClipboardEditorValue,
-} from "@/components/clipboard-editor";
-import { FileAttachButton } from "@/components/file-attach-button";
+import { ComposePanelBody } from "@/components/compose-panel-body";
+import { ComposeSheet } from "@/components/compose-sheet";
 import { JoinSessionProfile } from "@/components/join-session-profile";
 import { OnariamLogo } from "@/components/onariam-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -15,11 +12,13 @@ import { WaitingForHost } from "@/components/waiting-for-host";
 import { Button } from "@/components/ui/button";
 import { useClipboardP2p } from "@/hooks/use-clipboard-p2p";
 import { useDeviceId } from "@/hooks/use-device-id";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import type { AvatarId } from "@/lib/avatars";
 import { getAvatarEmoji } from "@/lib/avatars";
 import { createClipboardFilePayload } from "@/lib/clipboard-p2p";
 import { textToEscapedHtml } from "@/lib/clipboard-html";
 import { readSystemClipboardText } from "@/lib/clipboard-read";
+import type { ClipboardEditorValue } from "@/components/clipboard-editor";
 import type { IpfsFileMeta } from "@/lib/ipfs";
 import { formatMeetCode, isValidMeetCode } from "@/lib/meet-code";
 import { needsJoinProfile } from "@/lib/join-profile";
@@ -47,6 +46,7 @@ export function ClipboardSender({ code }: Props) {
   const formatted = formatMeetCode(code);
   const valid = isValidMeetCode(formatted);
   const { deviceId, ready } = useDeviceId();
+  const isMobile = useIsMobile();
 
   const [draft, setDraft] = useState<ClipboardEditorValue>({
     html: "",
@@ -62,6 +62,7 @@ export function ClipboardSender({ code }: Props) {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [profileReady, setProfileReady] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [composeOpen, setComposeOpen] = useState(false);
 
   const approved = memberStatus === "approved";
   const showProfileGate =
@@ -145,6 +146,12 @@ export function ClipboardSender({ code }: Props) {
     });
   }, [p2p, lastMessageId]);
 
+  const resetDraft = useCallback(() => {
+    setDraft({ html: "", text: "" });
+    setEditorSeed("");
+    setEditorKey((k) => k + 1);
+  }, []);
+
   const pasteFromSystem = useCallback(async () => {
     const clip = await readSystemClipboardText();
     if (!clip) return;
@@ -152,6 +159,17 @@ export function ClipboardSender({ code }: Props) {
     setDraft({ text: clip, html });
     setEditorSeed(html);
     setEditorKey((k) => k + 1);
+  }, []);
+
+  const openComposeAndPaste = useCallback(async () => {
+    const clip = await readSystemClipboardText();
+    setComposeOpen(true);
+    if (clip) {
+      const html = textToEscapedHtml(clip);
+      setDraft({ text: clip, html });
+      setEditorSeed(html);
+      setEditorKey((k) => k + 1);
+    }
   }, []);
 
   const markSent = useCallback((id: string) => {
@@ -172,10 +190,17 @@ export function ClipboardSender({ code }: Props) {
     });
     if (!payload) return;
     markSent(payload.id);
-    setDraft({ html: "", text: "" });
-    setEditorSeed("");
-    setEditorKey((k) => k + 1);
-  }, [p2p, draft, displayName, avatarId, deviceId, markSent]);
+    resetDraft();
+    setComposeOpen(false);
+  }, [
+    p2p,
+    draft,
+    displayName,
+    avatarId,
+    deviceId,
+    markSent,
+    resetDraft,
+  ]);
 
   const handleFileReady = useCallback(
     (file: IpfsFileMeta) => {
@@ -190,6 +215,7 @@ export function ClipboardSender({ code }: Props) {
       );
       if (!payload) return;
       markSent(payload.id);
+      setComposeOpen(false);
     },
     [p2p, displayName, avatarId, deviceId, markSent]
   );
@@ -277,9 +303,33 @@ export function ClipboardSender({ code }: Props) {
   const connected = p2p.status === "connected";
   const canSend = connected && Boolean(draft.text.trim()) && ready;
 
+  const composePanel = (
+    <ComposePanelBody
+      editorKey={editorKey}
+      editorSeed={editorSeed}
+      draft={draft}
+      onChange={setDraft}
+      onPasteFromClipboard={() => void pasteFromSystem()}
+      placeholder="Links, notes, codes…"
+      fileError={fileError}
+      onFileReady={handleFileReady}
+      onFileError={setFileError}
+      fileAttachDisabled={!connected}
+      showAssignee={false}
+      members={[]}
+      deviceFingerprint={deviceId ?? ""}
+      assignee={null}
+      onAssigneeChange={() => {}}
+      canSubmit={canSend}
+      submitLabel={sendLabel}
+      submitIcon="send"
+      onSubmit={handleSend}
+    />
+  );
+
   return (
     <div className="flex min-h-dvh min-w-0 flex-col overflow-x-hidden bg-background">
-      <header className="relative z-50 shrink-0 border-b border-border bg-card pt-safe">
+      <header className="relative z-40 shrink-0 border-b border-border bg-card pt-safe">
         <div
           className={cn(
             pageShell,
@@ -293,25 +343,25 @@ export function ClipboardSender({ code }: Props) {
           <div className="flex shrink-0 items-center gap-1">
             <ThemeToggle />
             <span
-            className={cn(
-              "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
-              p2p.status === "connected"
-                ? "bg-accent text-accent-foreground"
+              className={cn(
+                "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+                p2p.status === "connected"
+                  ? "bg-accent text-accent-foreground"
+                  : p2p.status === "connecting"
+                    ? "bg-muted text-muted-foreground"
+                    : p2p.status === "failed"
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-surface-elevated text-muted-foreground"
+              )}
+              role="status"
+            >
+              {p2p.status === "connected"
+                ? "Linked"
                 : p2p.status === "connecting"
-                  ? "bg-muted text-muted-foreground"
+                  ? "Linking"
                   : p2p.status === "failed"
-                    ? "bg-destructive/10 text-destructive"
-                    : "bg-surface-elevated text-muted-foreground"
-            )}
-            role="status"
-          >
-            {p2p.status === "connected"
-              ? "Linked"
-              : p2p.status === "connecting"
-                ? "Linking"
-                : p2p.status === "failed"
-                  ? "Error"
-                  : "Waiting for desktop"}
+                    ? "Error"
+                    : "Waiting"}
             </span>
           </div>
         </div>
@@ -321,7 +371,8 @@ export function ClipboardSender({ code }: Props) {
         className={cn(
           pageShell,
           stackLayout,
-          "flex w-full min-w-0 max-w-lg flex-1 py-3 sm:py-6"
+          "flex w-full min-w-0 max-w-lg flex-1 py-3 sm:py-6",
+          isMobile && "pb-24"
         )}
       >
         <div className="shrink-0 space-y-1 text-center">
@@ -349,61 +400,59 @@ export function ClipboardSender({ code }: Props) {
           )}
         </div>
 
-        <div
-          className={cn(
-            panel,
-            "flex min-h-0 flex-1 flex-col gap-3 p-0"
-          )}
-        >
-          <p className="shrink-0 px-3 pt-3 text-sm font-medium sm:px-4 sm:pt-4">
-            {sendScreenCopy.pasteLabel}
-          </p>
-          <div className="min-h-0 flex-1 px-3 sm:px-4">
-            <ClipboardEditor
-              key={editorKey}
-              initialContent={editorSeed}
-              placeholder="Links, notes, codes…"
-              minHeightClassName="min-h-[min(12rem,40dvh)] sm:min-h-[200px]"
-              onChange={setDraft}
-              onPasteFromClipboard={() => void pasteFromSystem()}
-            />
+        {isMobile ? (
+          <div className={cn(panel, "flex flex-1 flex-col justify-center p-6 text-center")}>
+            <p className="text-sm text-muted-foreground">
+              {connected
+                ? "Open the compose drawer to paste, attach a file, and send to the board on your computer."
+                : "Open the sync page on your computer with this code, then come back here to send."}
+            </p>
           </div>
-
-          <div className="sticky bottom-0 shrink-0 border-t border-border bg-card px-3 pb-safe pt-3 sm:static sm:border-0 sm:bg-transparent sm:px-4 sm:pb-0">
-            <div className="flex flex-col gap-2">
-              <FileAttachButton
-                onFileReady={handleFileReady}
-                onError={setFileError}
-                disabled={!connected}
-                className="w-full justify-center"
-              />
-              {fileError ? (
-                <p className="text-center text-xs text-destructive">{fileError}</p>
-              ) : null}
-              <Button
-                type="button"
-                className={cn(touchTarget, "h-12 w-full")}
-                disabled={!canSend}
-                onClick={handleSend}
-              >
-                {showSpinner ? (
-                  <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
-                ) : sendState === "copied" ? (
-                  <Check className="size-4 shrink-0" aria-hidden />
-                ) : (
-                  <Send className="size-4 shrink-0" aria-hidden />
-                )}
-                {sendLabel}
-              </Button>
-            </div>
+        ) : (
+          <div className={cn(panel, "flex min-h-0 flex-1 flex-col gap-3 p-0")}>
+            <p className="shrink-0 px-3 pt-3 text-sm font-medium sm:px-4 sm:pt-4">
+              {sendScreenCopy.pasteLabel}
+            </p>
+            <div className="min-h-0 flex-1 px-3 sm:px-4">{composePanel}</div>
           </div>
-        </div>
+        )}
 
-        <p className="shrink-0 py-4 text-center text-xs leading-relaxed text-muted-foreground pb-safe">
+        <p className="shrink-0 py-2 text-center text-xs leading-relaxed text-muted-foreground">
           Text goes peer-to-peer. Files upload to IPFS, then the CID is sent to
           your computer.
         </p>
       </div>
+
+      {isMobile && (
+        <>
+          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 px-safe pb-safe pt-3 backdrop-blur-sm">
+            <div className={cn(pageShell, "max-w-lg")}>
+              <Button
+                type="button"
+                className={cn(touchTarget, "h-12 w-full gap-2")}
+                disabled={!connected}
+                onClick={() => void openComposeAndPaste()}
+              >
+                {showSpinner ? (
+                  <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+                ) : (
+                  <ClipboardPaste className="size-4 shrink-0" aria-hidden />
+                )}
+                {sendScreenCopy.composeCta}
+              </Button>
+            </div>
+          </div>
+
+          <ComposeSheet
+            open={composeOpen}
+            onOpenChange={setComposeOpen}
+            title="Send to desktop"
+            description="Paste text or attach a file, then send to the board."
+          >
+            {composePanel}
+          </ComposeSheet>
+        </>
+      )}
     </div>
   );
 }

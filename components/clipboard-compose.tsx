@@ -1,16 +1,13 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
-import { useCallback, useId, useState } from "react";
+import { useCallback, useState } from "react";
 
-import { FileAttachButton } from "@/components/file-attach-button";
+import { ComposePanelBody } from "@/components/compose-panel-body";
+import { ComposeSheet } from "@/components/compose-sheet";
 import { PasteFab } from "@/components/paste-fab";
 import {
-  ClipboardEditor,
   type ClipboardEditorValue,
 } from "@/components/clipboard-editor";
-import { MemberTagPicker } from "@/components/member-tag-picker";
-import { Button } from "@/components/ui/button";
 import {
   isEmptyEditorHtml,
   plainTextFromHtml,
@@ -27,8 +24,6 @@ import {
 import type { IpfsFileMeta } from "@/lib/ipfs";
 import type { ClipboardBoardItem } from "@/lib/clipboard-inbox-storage";
 import type { RoomMember } from "@/lib/meetings";
-import { touchTarget } from "@/lib/ui";
-import { cn } from "@/lib/utils";
 
 type Props = {
   isHost: boolean;
@@ -41,10 +36,7 @@ type Props = {
   onAdd: (item: ClipboardBoardItem) => void;
   onBroadcast?: (item: ClipboardBoardItem) => void;
   showAssignee?: boolean;
-  className?: string;
-  /** When true, show floating Paste control (board has items or desktop). */
   floatingFab?: boolean;
-  /** Fired after double-tap quick paste succeeds */
   onQuickPaste?: () => void;
 };
 
@@ -59,11 +51,9 @@ export function ClipboardCompose({
   onAdd,
   onBroadcast,
   showAssignee = true,
-  className,
   floatingFab = true,
   onQuickPaste,
 }: Props) {
-  const panelId = useId();
   const [openInternal, setOpenInternal] = useState(false);
   const open = openControlled ?? openInternal;
   const setOpen = onOpenChange ?? setOpenInternal;
@@ -128,7 +118,6 @@ export function ClipboardCompose({
       isHost,
       onAdd,
       onBroadcast,
-      textToEscapedHtml,
     ]
   );
 
@@ -162,13 +151,22 @@ export function ClipboardCompose({
     ]
   );
 
+  const resetEditor = useCallback(() => {
+    setDraft({ html: "", text: "" });
+    setEditorSeed("");
+    setEditorKey((k) => k + 1);
+    setAssignee(null);
+  }, []);
+
   const handleFileReady = useCallback(
     (file: IpfsFileMeta) => {
       setFileError(null);
       addFileToBoard(file, assignee);
       onQuickPaste?.();
+      resetEditor();
+      setOpen(false);
     },
-    [addFileToBoard, assignee, onQuickPaste]
+    [addFileToBoard, assignee, onQuickPaste, resetEditor, setOpen]
   );
 
   const pasteQuickToBoard = useCallback(async () => {
@@ -178,13 +176,6 @@ export function ClipboardCompose({
     if (ok) onQuickPaste?.();
     return ok;
   }, [addTextToBoard, onQuickPaste]);
-
-  const resetEditor = () => {
-    setDraft({ html: "", text: "" });
-    setEditorSeed("");
-    setEditorKey((k) => k + 1);
-    setAssignee(null);
-  };
 
   const handleAdd = () => {
     if (isEmptyEditorHtml(draft.html) && !draft.text.trim()) return;
@@ -207,83 +198,32 @@ export function ClipboardCompose({
         />
       )}
 
-      {open && (
-        <div
-          className={cn(
-            "fixed inset-x-3 bottom-[max(6.5rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-lg sm:static sm:inset-auto sm:z-auto sm:max-w-none",
-            className
-          )}
-        >
-          <div
-            className={cn(
-              "overflow-hidden rounded-2xl border border-border/80 bg-card/95 shadow-lg backdrop-blur-sm",
-              "sm:rounded-xl sm:shadow-md"
-            )}
-          >
-            <div className="flex items-center justify-between gap-2 border-b border-border/80 px-3 py-2">
-              <span className="text-xs font-medium text-muted-foreground">
-                Paste to board
-              </span>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className={cn(
-                  touchTarget,
-                  "inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-surface-elevated hover:text-foreground"
-                )}
-                aria-label="Close"
-              >
-                <X className="size-3.5" aria-hidden />
-              </button>
-            </div>
-
-            <div
-              id={panelId}
-              className="compose-panel-in compose-panel-in-active flex flex-col gap-2.5 px-3 pb-3 pt-2.5 sm:gap-3 sm:px-3.5 sm:pb-3.5"
-            >
-              <ClipboardEditor
-                key={editorKey}
-                initialContent={editorSeed}
-                placeholder="Paste or compose…"
-                minHeightClassName="min-h-[88px] sm:min-h-[100px]"
-                onChange={setDraft}
-                onPasteFromClipboard={() => void pasteFromSystem()}
-              />
-
-              <div className="flex flex-wrap items-center gap-2">
-                <FileAttachButton
-                  onFileReady={handleFileReady}
-                  onError={setFileError}
-                />
-                {fileError ? (
-                  <p className="text-xs text-destructive">{fileError}</p>
-                ) : null}
-              </div>
-
-              {showAssignee && (
-                <MemberTagPicker
-                  members={members}
-                  currentDeviceFingerprint={deviceFingerprint}
-                  value={assignee}
-                  onChange={setAssignee}
-                  className="space-y-1.5 [&_button]:min-h-7"
-                />
-              )}
-
-              <Button
-                type="button"
-                size="sm"
-                className={cn(touchTarget, "h-11 w-full sm:h-9 sm:w-auto sm:self-end")}
-                disabled={!canAdd}
-                onClick={handleAdd}
-              >
-                <Plus className="size-3.5 shrink-0" aria-hidden />
-                Add to board
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ComposeSheet
+        open={open}
+        onOpenChange={setOpen}
+        title="Paste to board"
+        description="Paste text or attach a file — it appears on the board for everyone."
+      >
+        <ComposePanelBody
+          editorKey={editorKey}
+          editorSeed={editorSeed}
+          draft={draft}
+          onChange={setDraft}
+          onPasteFromClipboard={() => void pasteFromSystem()}
+          fileError={fileError}
+          onFileReady={handleFileReady}
+          onFileError={setFileError}
+          showAssignee={showAssignee}
+          members={members}
+          deviceFingerprint={deviceFingerprint}
+          assignee={assignee}
+          onAssigneeChange={setAssignee}
+          canSubmit={canAdd}
+          submitLabel="Add to board"
+          submitIcon="plus"
+          onSubmit={handleAdd}
+        />
+      </ComposeSheet>
     </>
   );
 }

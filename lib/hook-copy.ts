@@ -57,6 +57,7 @@ export const sendScreenCopy = {
   title: "Send to desktop",
   placeholder: "Links, notes, codes…",
   pasteLabel: "Paste or type",
+  composeCta: "Paste & send",
   sendCta: "Send to desktop",
   sent: "Sent",
   delivered: "On your board",

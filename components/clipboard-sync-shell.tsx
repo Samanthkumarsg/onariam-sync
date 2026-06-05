@@ -420,7 +420,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
             />
           ) : (
             <ul
-              className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pb-24 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin] sm:pb-8"
+              className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pb-28 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin] md:pb-8"
               aria-label="Session board items"
             >
               {rootItems.map((item, index) => (
