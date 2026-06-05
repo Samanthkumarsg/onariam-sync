@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, ClipboardPaste, Loader2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 
 import { ComposePanelBody } from "@/components/compose-panel-body";
 import { ComposeSheet } from "@/components/compose-sheet";
@@ -17,7 +17,7 @@ import type { AvatarId } from "@/lib/avatars";
 import { getAvatarEmoji } from "@/lib/avatars";
 import { createClipboardFilePayload } from "@/lib/clipboard-p2p";
 import { textToEscapedHtml } from "@/lib/clipboard-html";
-import { readSystemClipboardText } from "@/lib/clipboard-read";
+import { readSystemClipboard } from "@/lib/clipboard-read";
 import type { ClipboardEditorValue } from "@/components/clipboard-editor";
 import type { IpfsFileMeta } from "@/lib/ipfs";
 import { formatMeetCode, isValidMeetCode } from "@/lib/meet-code";
@@ -63,6 +63,8 @@ export function ClipboardSender({ code }: Props) {
   const [profileReady, setProfileReady] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [pasteHint, setPasteHint] = useState<string | null>(null);
+  const composeTouchHandledRef = useRef(false);
 
   const approved = memberStatus === "approved";
   const showProfileGate =
@@ -152,25 +154,51 @@ export function ClipboardSender({ code }: Props) {
     setEditorKey((k) => k + 1);
   }, []);
 
-  const pasteFromSystem = useCallback(async () => {
-    const clip = await readSystemClipboardText();
-    if (!clip) return;
+  const applyClipboardText = useCallback((clip: string) => {
     const html = textToEscapedHtml(clip);
     setDraft({ text: clip, html });
     setEditorSeed(html);
     setEditorKey((k) => k + 1);
+    setPasteHint(null);
   }, []);
 
-  const openComposeAndPaste = useCallback(async () => {
-    const clip = await readSystemClipboardText();
-    setComposeOpen(true);
-    if (clip) {
-      const html = textToEscapedHtml(clip);
-      setDraft({ text: clip, html });
-      setEditorSeed(html);
-      setEditorKey((k) => k + 1);
+  const seedFromClipboard = useCallback(async () => {
+    const result = await readSystemClipboard();
+    if (result.text) {
+      applyClipboardText(result.text);
+      return true;
     }
-  }, []);
+    if (result.error && result.error !== "empty") {
+      setPasteHint(sendScreenCopy.pasteFailedHint);
+    }
+    return false;
+  }, [applyClipboardText]);
+
+  const pasteFromSystem = useCallback(async () => {
+    return seedFromClipboard();
+  }, [seedFromClipboard]);
+
+  const openComposeAndPaste = useCallback(() => {
+    setComposeOpen(true);
+    void seedFromClipboard();
+  }, [seedFromClipboard]);
+
+  const handleComposePointerDown = useCallback(
+    (e: PointerEvent<HTMLButtonElement>) => {
+      if (e.pointerType === "mouse") return;
+      composeTouchHandledRef.current = true;
+      openComposeAndPaste();
+    },
+    [openComposeAndPaste]
+  );
+
+  const handleComposeClick = useCallback(() => {
+    if (composeTouchHandledRef.current) {
+      composeTouchHandledRef.current = false;
+      return;
+    }
+    openComposeAndPaste();
+  }, [openComposeAndPaste]);
 
   const markSent = useCallback((id: string) => {
     setLastMessageId(id);
@@ -302,13 +330,20 @@ export function ClipboardSender({ code }: Props) {
   const showSpinner = p2p.status === "connecting";
   const connected = p2p.status === "connected";
   const canSend = connected && Boolean(draft.text.trim()) && ready;
+  const hasDraft = Boolean(draft.text.trim());
+  const composeCtaLabel = connected
+    ? sendScreenCopy.composeLinkedCta
+    : sendScreenCopy.composeWaitingCta;
 
   const composePanel = (
     <ComposePanelBody
       editorKey={editorKey}
       editorSeed={editorSeed}
       draft={draft}
-      onChange={setDraft}
+      onChange={(value) => {
+        setDraft(value);
+        if (value.text.trim()) setPasteHint(null);
+      }}
       onPasteFromClipboard={() => void pasteFromSystem()}
       placeholder="Links, notes, codes…"
       fileError={fileError}
@@ -324,6 +359,8 @@ export function ClipboardSender({ code }: Props) {
       submitLabel={sendLabel}
       submitIcon="send"
       onSubmit={handleSend}
+      statusHint={!connected ? sendScreenCopy.sendUnlocksWhenLinked : null}
+      pasteHint={pasteHint}
     />
   );
 
@@ -401,13 +438,38 @@ export function ClipboardSender({ code }: Props) {
         </div>
 
         {isMobile ? (
-          <div className={cn(panel, "flex flex-1 flex-col justify-center p-6 text-center")}>
-            <p className="text-sm text-muted-foreground">
-              {connected
-                ? "Open the compose drawer to paste, attach a file, and send to the board on your computer."
-                : "Open the sync page on your computer with this code, then come back here to send."}
-            </p>
-          </div>
+          hasDraft && !composeOpen ? (
+            <div className={cn(panel, "flex flex-1 flex-col gap-3 p-4 text-left")}>
+              <p className="text-xs font-medium text-muted-foreground">
+                {sendScreenCopy.pasteLabel}
+              </p>
+              <p className="line-clamp-3 whitespace-pre-wrap break-words text-sm text-foreground">
+                {draft.text}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={cn(touchTarget, "h-9 w-fit self-start")}
+                onClick={() => setComposeOpen(true)}
+              >
+                Edit
+              </Button>
+            </div>
+          ) : (
+            <div
+              className={cn(
+                panel,
+                "flex flex-1 flex-col justify-center p-6 text-center"
+              )}
+            >
+              <p className="text-sm text-muted-foreground">
+                {connected
+                  ? sendScreenCopy.mobileComposeHint
+                  : sendScreenCopy.waitingDesktop}
+              </p>
+            </div>
+          )
         ) : (
           <div className={cn(panel, "flex min-h-0 flex-1 flex-col gap-3 p-0")}>
             <p className="shrink-0 px-3 pt-3 text-sm font-medium sm:px-4 sm:pt-4">
@@ -430,15 +492,15 @@ export function ClipboardSender({ code }: Props) {
               <Button
                 type="button"
                 className={cn(touchTarget, "h-12 w-full gap-2")}
-                disabled={!connected}
-                onClick={() => void openComposeAndPaste()}
+                onPointerDown={handleComposePointerDown}
+                onClick={handleComposeClick}
               >
                 {showSpinner ? (
                   <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
                 ) : (
                   <ClipboardPaste className="size-4 shrink-0" aria-hidden />
                 )}
-                {sendScreenCopy.composeCta}
+                {composeCtaLabel}
               </Button>
             </div>
           </div>

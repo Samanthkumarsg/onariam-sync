@@ -101,7 +101,7 @@ export function ComposeSheet(props: Props) {
               <DrawerDescription>{props.description}</DrawerDescription>
             ) : null}
           </DrawerHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-safe pt-1 [-webkit-overflow-scrolling:touch]">
             {props.children}
           </div>
         </DrawerContent>

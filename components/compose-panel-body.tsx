@@ -35,6 +35,8 @@ type Props = {
   submitIcon?: "plus" | "send";
   onSubmit: () => void;
   className?: string;
+  statusHint?: string | null;
+  pasteHint?: string | null;
 };
 
 export function ComposePanelBody({
@@ -58,6 +60,8 @@ export function ComposePanelBody({
   submitIcon = "plus",
   onSubmit,
   className,
+  statusHint = null,
+  pasteHint = null,
 }: Props) {
   const SubmitIcon = submitIcon === "send" ? Send : Plus;
 
@@ -68,6 +72,10 @@ export function ComposePanelBody({
         className
       )}
     >
+      {statusHint ? (
+        <p className="text-xs text-muted-foreground">{statusHint}</p>
+      ) : null}
+
       <ClipboardEditor
         key={editorKey}
         initialContent={editorSeed}
@@ -76,6 +84,10 @@ export function ComposePanelBody({
         onChange={onChange}
         onPasteFromClipboard={onPasteFromClipboard}
       />
+
+      {pasteHint ? (
+        <p className="text-xs text-muted-foreground">{pasteHint}</p>
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-2">
         <FileAttachButton

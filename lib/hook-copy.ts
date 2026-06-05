@@ -58,6 +58,13 @@ export const sendScreenCopy = {
   placeholder: "Links, notes, codes…",
   pasteLabel: "Paste or type",
   composeCta: "Paste & send",
+  composeWaitingCta: "Paste & type",
+  composeLinkedCta: "Paste & send",
+  sendUnlocksWhenLinked: "Send unlocks when desktop is linked.",
+  pasteFailedHint:
+    "Couldn't read clipboard — long-press in the editor to paste.",
+  mobileComposeHint:
+    "Tap below to paste, attach a file, and send to the board on your computer.",
   sendCta: "Send to desktop",
   sent: "Sent",
   delivered: "On your board",
