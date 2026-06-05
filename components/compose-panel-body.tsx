@@ -72,7 +72,7 @@ export function ComposePanelBody({
         key={editorKey}
         initialContent={editorSeed}
         placeholder={placeholder}
-        minHeightClassName="min-h-[min(10rem,36dvh)] sm:min-h-[120px]"
+        minHeightClassName="min-h-[5.5rem] sm:min-h-[6.5rem]"
         onChange={onChange}
         onPasteFromClipboard={onPasteFromClipboard}
       />

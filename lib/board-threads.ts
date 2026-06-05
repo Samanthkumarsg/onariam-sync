@@ -20,6 +20,31 @@ export function getDirectReplies(
     .sort((a, b) => a.at - b.at);
 }
 
+/** All replies under a root, depth-first, oldest first within each level. */
+export function getThreadReplyList(
+  items: ClipboardBoardItem[],
+  rootId: string
+): ClipboardBoardItem[] {
+  const byParent = new Map<string, ClipboardBoardItem[]>();
+  for (const item of items) {
+    if (!item.parentId) continue;
+    const list = byParent.get(item.parentId) ?? [];
+    list.push(item);
+    byParent.set(item.parentId, list);
+  }
+
+  const out: ClipboardBoardItem[] = [];
+  const walk = (id: string) => {
+    const children = (byParent.get(id) ?? []).sort((a, b) => a.at - b.at);
+    for (const child of children) {
+      out.push(child);
+      walk(child.id);
+    }
+  };
+  walk(rootId);
+  return out;
+}
+
 export function countThreadReplies(
   items: ClipboardBoardItem[],
   rootId: string

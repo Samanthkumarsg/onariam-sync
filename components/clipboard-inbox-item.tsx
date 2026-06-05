@@ -72,8 +72,8 @@ export function ClipboardBoardItemCard({
     <article
       className={cn(
         paperCard,
-        "relative z-0 flex min-w-0 flex-col gap-2.5",
-        isReply ? "p-2.5 sm:p-3" : "p-3 sm:p-4",
+        "relative z-0 flex min-w-0 flex-col",
+        isReply ? "gap-1.5 p-2" : "gap-2.5 p-3 sm:p-4",
         isLatest && !isReply && "paper-card--latest z-[1]",
         highlightCopy && "paper-card--highlight",
         replyOpen && "ring-2 ring-primary/20"
@@ -88,12 +88,12 @@ export function ClipboardBoardItemCard({
               : `Pasted by ${author.displayName}`
       }
     >
-      <div className="relative z-[1] flex min-w-0 gap-2.5 sm:gap-3">
+      <div className="relative z-[1] flex min-w-0 gap-2">
         <span
           className={cn(
             "flex shrink-0 items-center justify-center rounded-full bg-surface-elevated leading-none",
             isReply
-              ? "size-8 text-base sm:size-7 sm:text-sm"
+              ? "size-7 text-sm"
               : "size-10 text-xl sm:size-9 sm:text-lg"
           )}
           title={author.displayName}
@@ -101,7 +101,12 @@ export function ClipboardBoardItemCard({
         >
           {author.emoji}
         </span>
-        <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:gap-2.5">
+        <div
+          className={cn(
+            "flex min-w-0 flex-1 gap-1.5",
+            isReply ? "items-start" : "flex-col gap-2 sm:flex-row sm:items-start sm:gap-2.5"
+          )}
+        >
           {isFile ? (
             <div className="flex min-w-0 flex-1 items-start gap-2.5">
               <FileIcon
@@ -123,8 +128,8 @@ export function ClipboardBoardItemCard({
           ) : item.html ? (
             <div
               className={cn(
-                "clipboard-rich min-w-0 flex-1 font-[family-name:var(--font-display)] text-sm leading-relaxed text-foreground",
-                !isReply && "line-clamp-3",
+                "clipboard-rich min-w-0 flex-1 font-[family-name:var(--font-display)] leading-relaxed text-foreground",
+                isReply ? "text-xs line-clamp-2" : "text-sm line-clamp-3",
                 "[&_p]:mb-1 [&_p:last-child]:mb-0",
                 "[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-4"
               )}
@@ -133,8 +138,8 @@ export function ClipboardBoardItemCard({
           ) : (
             <p
               className={cn(
-                "min-w-0 flex-1 whitespace-pre-wrap break-words font-[family-name:var(--font-display)] text-sm leading-relaxed text-foreground",
-                !isReply && "line-clamp-3"
+                "min-w-0 flex-1 whitespace-pre-wrap break-words font-[family-name:var(--font-display)] leading-relaxed text-foreground",
+                isReply ? "text-xs line-clamp-2" : "text-sm line-clamp-3"
               )}
             >
               {item.text}
@@ -144,7 +149,10 @@ export function ClipboardBoardItemCard({
             type="button"
             variant="outline"
             size="sm"
-            className="h-10 shrink-0 gap-1 self-end sm:h-8 sm:px-2.5"
+            className={cn(
+              "shrink-0 gap-1 self-start",
+              isReply ? "size-7 px-0 sm:size-7" : "h-10 self-end sm:h-8 sm:px-2.5"
+            )}
             aria-label={
               isFile
                 ? fileTransferCopy.download
@@ -174,8 +182,10 @@ export function ClipboardBoardItemCard({
 
       <div
         className={cn(
-          "relative z-[1] flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 border-t border-[color:var(--paper-divider)]/90 pt-2 text-[11px] text-ink-muted",
-          isReply ? "pl-10 sm:pl-9" : "pl-[2.875rem] sm:pl-12"
+          "relative z-[1] flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-ink-muted",
+          isReply
+            ? "pl-9"
+            : "border-t border-[color:var(--paper-divider)]/90 pt-2 pl-[2.875rem] sm:pl-12"
         )}
       >
         {isLatest && !isReply && (
@@ -184,10 +194,9 @@ export function ClipboardBoardItemCard({
           </span>
         )}
         <span className="inline-flex max-w-full items-center gap-1 truncate font-medium text-foreground/90">
-          <span aria-hidden>{author.emoji}</span>
           <span className="truncate">{author.displayName}</span>
         </span>
-        {from && (
+        {from && !isReply && (
           <span className="inline-flex max-w-full items-center gap-0.5 truncate">
             {item.source === "mobile" ? (
               <Smartphone className="size-2.5 shrink-0" aria-hidden />
@@ -207,15 +216,20 @@ export function ClipboardBoardItemCard({
           </span>
         )}
         <time
-          className="tabular-nums"
+          className="shrink-0 tabular-nums"
           dateTime={new Date(item.at).toISOString()}
         >
-          {new Date(item.at).toLocaleString(undefined, {
-            month: "short",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          })}
+          {isReply
+            ? new Date(item.at).toLocaleString(undefined, {
+                hour: "numeric",
+                minute: "2-digit",
+              })
+            : new Date(item.at).toLocaleString(undefined, {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })}
         </time>
         {copied && !isFile ? (
           <span className="inline-flex items-center gap-0.5 text-accent-foreground">
@@ -230,13 +244,14 @@ export function ClipboardBoardItemCard({
             className={cn(
               btnGhost,
               touchTarget,
-              "ml-auto inline-flex h-8 items-center gap-1 px-2",
+              "inline-flex items-center gap-1 px-1.5",
+              isReply ? "h-7 text-[10px]" : "ml-auto h-8 px-2",
               replyOpen && "bg-surface-elevated text-foreground"
             )}
             aria-expanded={replyOpen}
           >
             <MessageSquare className="size-3 shrink-0" aria-hidden />
-            {threadCopy.reply}
+            {!isReply && threadCopy.reply}
           </button>
         )}
       </div>

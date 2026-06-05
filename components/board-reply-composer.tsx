@@ -10,14 +10,12 @@ import { cn } from "@/lib/utils";
 type Props = {
   onSubmit: (text: string) => void;
   onCancel: () => void;
-  depth?: number;
   className?: string;
 };
 
 export function BoardReplyComposer({
   onSubmit,
   onCancel,
-  depth = 0,
   className,
 }: Props) {
   const textareaId = useId();
@@ -34,8 +32,7 @@ export function BoardReplyComposer({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card/95 p-2.5 sm:p-3",
-        depth > 0 && "ml-0",
+        "rounded-lg border border-border/80 bg-surface-elevated/40 p-2",
         className
       )}
     >
@@ -45,12 +42,12 @@ export function BoardReplyComposer({
       <textarea
         ref={textareaRef}
         id={textareaId}
-        rows={3}
+        rows={2}
         autoFocus
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder={threadCopy.replyPlaceholder}
-        className={cn(input, "min-h-[4.5rem] resize-y py-2.5 text-sm")}
+        className={cn(input, "min-h-[3.25rem] resize-none py-2 text-sm")}
         onKeyDown={(e) => {
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
             e.preventDefault();
@@ -59,12 +56,12 @@ export function BoardReplyComposer({
           if (e.key === "Escape") onCancel();
         }}
       />
-      <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
+      <div className="mt-1.5 flex items-center justify-end gap-1.5">
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className={cn(touchTarget, "h-9 px-3 text-xs")}
+          className={cn(touchTarget, "h-8 px-2 text-xs")}
           onClick={onCancel}
         >
           {threadCopy.cancel}
@@ -72,7 +69,7 @@ export function BoardReplyComposer({
         <Button
           type="button"
           size="sm"
-          className={cn(touchTarget, "h-9 px-3 text-xs")}
+          className={cn(touchTarget, "h-8 px-2.5 text-xs")}
           disabled={!text.trim()}
           onClick={handleSubmit}
         >

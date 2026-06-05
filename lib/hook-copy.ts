@@ -125,6 +125,9 @@ export const threadCopy = {
   cancel: "Cancel",
   replies: (count: number) =>
     count === 1 ? "1 reply" : `${count} replies`,
+  showReplies: (count: number) =>
+    count === 1 ? "Show 1 reply" : `Show ${count} replies`,
+  hideReplies: "Hide replies",
 } as const;
 
 export const hostToast = {

@@ -46,7 +46,7 @@ function ComposeModal({
           aria-modal="true"
           aria-labelledby="compose-sheet-title"
           className={cn(
-            "relative flex max-h-[min(90dvh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-lg",
+            "relative flex w-full max-w-lg flex-col rounded-2xl border border-border bg-card shadow-lg",
             className
           )}
           onClick={(e) => e.stopPropagation()}
@@ -75,9 +75,7 @@ function ComposeModal({
               <X className="size-3.5" aria-hidden />
             </button>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-            {children}
-          </div>
+          <div className="px-4 pb-4">{children}</div>
         </div>
       </div>
     </div>
