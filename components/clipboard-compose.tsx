@@ -10,7 +10,12 @@ import {
 } from "@/components/clipboard-editor";
 import { MemberTagPicker } from "@/components/member-tag-picker";
 import { Button } from "@/components/ui/button";
-import { isEmptyEditorHtml, plainTextFromHtml } from "@/lib/clipboard-html";
+import {
+  isEmptyEditorHtml,
+  plainTextFromHtml,
+  textToEscapedHtml,
+} from "@/lib/clipboard-html";
+import { readSystemClipboardText } from "@/lib/clipboard-read";
 import type { AvatarId } from "@/lib/avatars";
 import { getAvatarEmoji } from "@/lib/avatars";
 import type { ClipboardAssignee } from "@/lib/clipboard-assignee";
@@ -66,36 +71,25 @@ export function ClipboardCompose({
   const [editorSeed, setEditorSeed] = useState("");
   const [assignee, setAssignee] = useState<ClipboardAssignee | null>(null);
 
-  const pasteFromSystem = useCallback(async () => {
-    try {
-      const clip = await navigator.clipboard.readText();
-      if (!clip) return false;
-      const html = `<p>${clip
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\n/g, "<br>")}</p>`;
-      setDraft({ text: clip, html });
-      setEditorSeed(html);
-      setEditorKey((k) => k + 1);
-      return true;
-    } catch {
-      return false;
-    }
+  const applyClipboardText = useCallback((clip: string) => {
+    const html = textToEscapedHtml(clip);
+    setDraft({ text: clip, html });
+    setEditorSeed(html);
+    setEditorKey((k) => k + 1);
   }, []);
+
+  const pasteFromSystem = useCallback(async () => {
+    const clip = await readSystemClipboardText();
+    if (!clip) return false;
+    applyClipboardText(clip);
+    return true;
+  }, [applyClipboardText]);
 
   const openAndPaste = useCallback(async () => {
+    const clip = await readSystemClipboardText();
     setOpen(true);
-    await pasteFromSystem();
-  }, [pasteFromSystem, setOpen]);
-
-  const textToEscapedHtml = useCallback((text: string) => {
-    return `<p>${text
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/\n/g, "<br>")}</p>`;
-  }, []);
+    if (clip) applyClipboardText(clip);
+  }, [applyClipboardText, setOpen]);
 
   const addTextToBoard = useCallback(
     (text: string, html?: string, itemAssignee: ClipboardAssignee | null = null) => {
@@ -133,16 +127,12 @@ export function ClipboardCompose({
   );
 
   const pasteQuickToBoard = useCallback(async () => {
-    try {
-      const clip = await navigator.clipboard.readText();
-      if (!clip?.trim()) return false;
-      const ok = addTextToBoard(clip, textToEscapedHtml(clip));
-      if (ok) onQuickPaste?.();
-      return ok;
-    } catch {
-      return false;
-    }
-  }, [addTextToBoard, onQuickPaste, textToEscapedHtml]);
+    const clip = await readSystemClipboardText();
+    if (!clip?.trim()) return false;
+    const ok = addTextToBoard(clip, textToEscapedHtml(clip));
+    if (ok) onQuickPaste?.();
+    return ok;
+  }, [addTextToBoard, onQuickPaste]);
 
   const resetEditor = () => {
     setDraft({ html: "", text: "" });

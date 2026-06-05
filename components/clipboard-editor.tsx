@@ -10,7 +10,7 @@ import {
   Redo2,
   Undo2,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { plainTextFromHtml } from "@/lib/clipboard-html";
 import { cn } from "@/lib/utils";
@@ -32,12 +32,14 @@ type Props = {
 
 function ToolbarButton({
   onClick,
+  onPointerDown,
   active,
   label,
   children,
   disabled,
 }: {
   onClick: () => void;
+  onPointerDown?: (e: React.PointerEvent<HTMLButtonElement>) => void;
   active?: boolean;
   label: string;
   children: React.ReactNode;
@@ -47,6 +49,7 @@ function ToolbarButton({
     <button
       type="button"
       onClick={onClick}
+      onPointerDown={onPointerDown}
       disabled={disabled}
       aria-label={label}
       className={cn(
@@ -69,6 +72,8 @@ export function ClipboardEditor({
   onPasteFromClipboard,
   disabled = false,
 }: Props) {
+  const touchPasteRef = useRef(false);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -165,7 +170,18 @@ export function ClipboardEditor({
             <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />
             <ToolbarButton
               label="Paste from system clipboard"
-              onClick={onPasteFromClipboard}
+              onPointerDown={(e) => {
+                if (e.pointerType === "mouse" || !onPasteFromClipboard) return;
+                touchPasteRef.current = true;
+                onPasteFromClipboard();
+              }}
+              onClick={() => {
+                if (touchPasteRef.current) {
+                  touchPasteRef.current = false;
+                  return;
+                }
+                onPasteFromClipboard?.();
+              }}
             >
               <ClipboardPaste className="size-3.5" />
             </ToolbarButton>

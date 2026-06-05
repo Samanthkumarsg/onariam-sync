@@ -301,7 +301,7 @@ export function RoomLobby() {
       deviceFingerprint: deviceId,
       avatarId: joinAvatarId,
       isHost: false,
-      memberStatus: "pending",
+      memberStatus: "approved",
     });
 
     startTransition(() => {

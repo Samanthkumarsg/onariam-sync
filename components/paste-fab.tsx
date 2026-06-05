@@ -1,7 +1,7 @@
 "use client";
 
 import { ClipboardPaste } from "lucide-react";
-import { useRef, type MouseEvent } from "react";
+import { useRef, type MouseEvent, type PointerEvent } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -24,8 +24,23 @@ export function PasteFab({
   label = "Paste",
 }: Props) {
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchHandledRef = useRef(false);
+
+  const handlePointerDown = (e: PointerEvent<HTMLButtonElement>) => {
+    if (e.pointerType === "mouse") return;
+    touchHandledRef.current = true;
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+    }
+    onClick();
+  };
 
   const handleClick = () => {
+    if (touchHandledRef.current) {
+      touchHandledRef.current = false;
+      return;
+    }
     if (!onDoubleClick) {
       onClick();
       return;
@@ -56,6 +71,7 @@ export function PasteFab({
     >
       <button
         type="button"
+        onPointerDown={handlePointerDown}
         onClick={handleClick}
         onDoubleClick={onDoubleClick ? handleDoubleClick : undefined}
         className={cn(

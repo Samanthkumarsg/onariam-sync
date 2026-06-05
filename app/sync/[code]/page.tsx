@@ -159,7 +159,7 @@ export default function SyncPage() {
               deviceFingerprint: deviceId,
               avatarId,
               isHost: false,
-              memberStatus: "pending",
+              memberStatus: "approved",
             });
             setProfileReady(true);
           }}

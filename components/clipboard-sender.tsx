@@ -15,6 +15,8 @@ import { useClipboardP2p } from "@/hooks/use-clipboard-p2p";
 import { useDeviceId } from "@/hooks/use-device-id";
 import type { AvatarId } from "@/lib/avatars";
 import { getAvatarEmoji } from "@/lib/avatars";
+import { textToEscapedHtml } from "@/lib/clipboard-html";
+import { readSystemClipboardText } from "@/lib/clipboard-read";
 import { formatMeetCode, isValidMeetCode } from "@/lib/meet-code";
 import { needsJoinProfile } from "@/lib/join-profile";
 import { getRoomSession, saveRoomSession } from "@/lib/room-session";
@@ -139,20 +141,12 @@ export function ClipboardSender({ code }: Props) {
   }, [p2p, lastMessageId]);
 
   const pasteFromSystem = useCallback(async () => {
-    try {
-      const clip = await navigator.clipboard.readText();
-      if (!clip) return;
-      const html = `<p>${clip
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\n/g, "<br>")}</p>`;
-      setDraft({ text: clip, html });
-      setEditorSeed(html);
-      setEditorKey((k) => k + 1);
-    } catch {
-      /* permission denied or unsupported */
-    }
+    const clip = await readSystemClipboardText();
+    if (!clip) return;
+    const html = textToEscapedHtml(clip);
+    setDraft({ text: clip, html });
+    setEditorSeed(html);
+    setEditorKey((k) => k + 1);
   }, []);
 
   const handleSend = useCallback(() => {
@@ -201,7 +195,7 @@ export function ClipboardSender({ code }: Props) {
               deviceFingerprint: deviceId,
               avatarId: picked,
               isHost: false,
-              memberStatus: "pending",
+              memberStatus: "approved",
             });
             setDisplayName(name.trim() || `Guest ${deviceId.slice(-4)}`);
             setProfileReady(true);
