@@ -10,6 +10,7 @@ import {
 import { FileAttachButton } from "@/components/file-attach-button";
 import { JoinSessionProfile } from "@/components/join-session-profile";
 import { OnariamLogo } from "@/components/onariam-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { WaitingForHost } from "@/components/waiting-for-host";
 import { Button } from "@/components/ui/button";
 import { useClipboardP2p } from "@/hooks/use-clipboard-p2p";
@@ -286,10 +287,12 @@ export function ClipboardSender({ code }: Props) {
           )}
         >
           <OnariamLogo href={null} size="sm" compact className="shrink-0" />
-          <span className="min-w-0 truncate font-mono text-xs text-muted-foreground">
+          <span className="min-w-0 flex-1 truncate text-center font-mono text-xs text-muted-foreground">
             {formatted}
           </span>
-          <span
+          <div className="flex shrink-0 items-center gap-1">
+            <ThemeToggle />
+            <span
             className={cn(
               "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
               p2p.status === "connected"
@@ -309,7 +312,8 @@ export function ClipboardSender({ code }: Props) {
                 : p2p.status === "failed"
                   ? "Error"
                   : "Waiting for desktop"}
-          </span>
+            </span>
+          </div>
         </div>
       </header>
 

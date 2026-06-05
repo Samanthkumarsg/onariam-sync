@@ -174,12 +174,12 @@ export function ClipboardBoardItemCard({
 
       <div
         className={cn(
-          "relative z-[1] flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 border-t border-[#e5e1d8]/90 pt-2 text-[11px] text-ink-muted",
+          "relative z-[1] flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 border-t border-[color:var(--paper-divider)]/90 pt-2 text-[11px] text-ink-muted",
           isReply ? "pl-10 sm:pl-9" : "pl-[2.875rem] sm:pl-12"
         )}
       >
         {isLatest && !isReply && (
-          <span className="rounded-sm border border-[#d9d4c8] bg-[#fdfcfa] px-1 py-px font-mono text-[10px] font-medium uppercase tracking-wide text-ink-muted">
+          <span className="rounded-sm border border-[color:var(--paper-badge-border)] bg-[color:var(--paper-badge-bg)] px-1 py-px font-mono text-[10px] font-medium uppercase tracking-wide text-ink-muted">
             Latest
           </span>
         )}

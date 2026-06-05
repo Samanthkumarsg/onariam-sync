@@ -29,7 +29,7 @@ export const input = cn(
   "h-11 w-full min-w-0 rounded-lg border border-border bg-input px-3.5 text-base text-foreground sm:h-10 sm:text-sm",
   "placeholder:text-muted-foreground",
   "transition-colors outline-none",
-  "focus:border-[#9b60aa] focus:ring-2 focus:ring-[#9b60aa]/25"
+  "focus:border-ring focus:ring-2 focus:ring-ring/25"
 );
 
 export const btnGhost = cn(

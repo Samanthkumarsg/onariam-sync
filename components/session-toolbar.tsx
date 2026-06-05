@@ -5,6 +5,7 @@ import { LogOut, QrCode } from "lucide-react";
 import { OnariamLogo } from "@/components/onariam-logo";
 import { ParticipantsMenu } from "@/components/participants-menu";
 import { SessionPairDrawer } from "@/components/session-pair-drawer";
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { RoomSession } from "@/lib/room-session";
 import { pageShell, toolbarControl, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
@@ -86,6 +87,8 @@ export function SessionToolbar({
               onHostToast={onHostToast}
               triggerClassName={cn(touchTarget, "h-10 sm:h-9")}
             />
+
+            <ThemeToggle />
 
             <button
               type="button"

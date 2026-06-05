@@ -10,6 +10,7 @@ import {
 } from "@/components/avatar-picker";
 import { JoinSessionProfile } from "@/components/join-session-profile";
 import { OnariamLogo } from "@/components/onariam-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { LobbyEmojiFlow } from "@/components/lobby-emoji-flow";
 import { LobbyNameInput } from "@/components/lobby-name-input";
 import { Button } from "@/components/ui/button";
@@ -328,7 +329,10 @@ export function RoomLobby() {
           launchPull !== null && "opacity-20"
         )}
       >
-        <header className="flex flex-col items-center gap-2 text-center">
+        <header className="relative flex flex-col items-center gap-2 text-center">
+          <div className="absolute right-0 top-0">
+            <ThemeToggle />
+          </div>
           <OnariamLogo href={null} />
           {view === "home" && (
             <p className="text-sm text-muted-foreground">

@@ -3,6 +3,7 @@
 import { Loader2 } from "lucide-react";
 
 import { OnariamLogo } from "@/components/onariam-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { pageShell, panel, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
@@ -16,9 +17,17 @@ type Props = {
 export function WaitingForHost({ topic, displayName, onLeave }: Props) {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      <header className="shrink-0 border-b border-border pt-safe">
-        <div className={cn(pageShell, "flex justify-center py-3")}>
+      <header className="shrink-0 border-b border-border bg-card pt-safe">
+        <div
+          className={cn(
+            pageShell,
+            "relative flex min-h-12 items-center justify-center py-3"
+          )}
+        >
           <OnariamLogo href={null} size="sm" />
+          <div className="absolute right-0 top-1/2 -translate-y-1/2">
+            <ThemeToggle />
+          </div>
         </div>
       </header>
       <div

@@ -14,28 +14,28 @@
     system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, Menlo, monospace;
 
-  --color-background: #ffffff;
-  --color-foreground: #212121;
-  --color-card: #eeece7;
-  --color-card-foreground: #212121;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #212121;
-  --color-primary: #17171c;
-  --color-primary-hover: #2a2a32;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #eeece7;
-  --color-secondary-foreground: #212121;
-  --color-muted: #f1f5ff;
-  --color-muted-foreground: #93939f;
-  --color-ink-muted: #616161;
-  --color-accent: #edfce9;
-  --color-accent-foreground: #003c33;
-  --color-surface-elevated: #f1f5ff;
-  --color-action: #1863dc;
-  --color-destructive: #b30000;
-  --color-border: #d9d9dd;
-  --color-input: #ffffff;
-  --color-ring: #4c6ee6;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-action: var(--action);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -66,7 +66,45 @@
   --border: #d9d9dd;
   --input: #ffffff;
   --ring: #4c6ee6;
+  --paper-surface: #ffffff;
+  --paper-badge-bg: #fdfcfa;
+  --paper-badge-border: #d9d4c8;
+  --paper-divider: #e5e1d8;
+  --selection-bg: color-mix(in srgb, #17171c 14%, transparent);
+  --selection-fg: #212121;
   --radius: 8px;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #121214;
+  --foreground: #ededf0;
+  --card: #1a1a1f;
+  --card-foreground: #ededf0;
+  --popover: #1e1e24;
+  --popover-foreground: #ededf0;
+  --primary: #ededf0;
+  --primary-hover: #ffffff;
+  --primary-foreground: #121214;
+  --secondary: #232328;
+  --secondary-foreground: #ededf0;
+  --muted: #232328;
+  --muted-foreground: #9a9aa5;
+  --ink-muted: #a8a8b3;
+  --accent: #1a3d32;
+  --accent-foreground: #b8f0d4;
+  --surface-elevated: #28282e;
+  --action: #5b9aff;
+  --destructive: #ff7070;
+  --border: #2e2e36;
+  --input: #1e1e24;
+  --ring: #6b8cff;
+  --paper-surface: #1e1e24;
+  --paper-badge-bg: #232328;
+  --paper-badge-border: #3a3a42;
+  --paper-divider: #2e2e36;
+  --selection-bg: color-mix(in srgb, #ededf0 18%, transparent);
+  --selection-fg: #ededf0;
 }
 
 @layer base {
@@ -84,8 +122,8 @@
   }
 
   ::selection {
-    background-color: color-mix(in srgb, #17171c 14%, transparent);
-    color: #212121;
+    background-color: var(--selection-bg);
+    color: var(--selection-fg);
   }
 
   h1,
@@ -105,7 +143,7 @@
   }
 
   .tiptap-editor p.is-editor-empty:first-child::before {
-    color: #93939f;
+    color: var(--muted-foreground);
     content: attr(data-placeholder);
     float: left;
     height: 0;
@@ -221,21 +259,21 @@
     overflow: hidden;
     border: 1px solid var(--border);
     border-radius: 12px;
-    background: #ffffff;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    background: var(--paper-surface);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 6%, transparent);
   }
 
   .paper-card--latest {
-    border-color: color-mix(in srgb, var(--border) 70%, #171717 30%);
+    border-color: color-mix(in srgb, var(--border) 55%, var(--foreground) 45%);
     box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.05),
-      0 4px 12px rgba(0, 0, 0, 0.06);
+      0 1px 2px color-mix(in srgb, var(--foreground) 8%, transparent),
+      0 4px 12px color-mix(in srgb, var(--foreground) 10%, transparent);
   }
 
   .paper-card--highlight {
     box-shadow:
-      0 0 0 2px color-mix(in srgb, var(--action) 22%, transparent),
-      0 1px 2px rgba(0, 0, 0, 0.05);
+      0 0 0 2px color-mix(in srgb, var(--action) 28%, transparent),
+      0 1px 2px color-mix(in srgb, var(--foreground) 8%, transparent);
   }
 }
 

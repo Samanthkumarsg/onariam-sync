@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Inter, Space_Grotesk } from "next/font/google";
+
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -20,9 +22,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Onariam Sync",
   description: "Universal clipboard — paste from phone to browser, peer-to-peer",
-  other: {
-    "color-scheme": "light",
-  },
 };
 
 export const viewport = {
@@ -39,10 +38,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${inter.variable} ${spaceGrotesk.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full min-w-0 flex-col overflow-x-hidden bg-background text-foreground">
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );
