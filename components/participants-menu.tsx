@@ -6,6 +6,7 @@ import {
   Loader2,
   Monitor,
   Smartphone,
+  UserMinus,
   Users,
   X,
 } from "lucide-react";
@@ -77,6 +78,7 @@ function MemberRow({
   deviceKind,
   onApprove,
   onReject,
+  onKick,
   acting,
 }: {
   member: RoomMember;
@@ -85,6 +87,7 @@ function MemberRow({
   deviceKind?: ParticipantDeviceKind;
   onApprove?: () => void;
   onReject?: () => void;
+  onKick?: () => void;
   acting?: boolean;
 }) {
   const pending = member.status === "pending";
@@ -153,6 +156,25 @@ function MemberRow({
           </button>
         </div>
       )}
+      {isHost &&
+        !isYou &&
+        member.status === "approved" &&
+        onKick && (
+          <button
+            type="button"
+            disabled={acting}
+            onClick={onKick}
+            className="relative z-10 flex size-10 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 touch-manipulation sm:size-8"
+            aria-label={`Remove ${member.display_name} from session`}
+            title="Remove from session"
+          >
+            {acting ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <UserMinus className="size-3.5" />
+            )}
+          </button>
+        )}
     </li>
   );
 }
@@ -235,6 +257,16 @@ export function ParticipantsMenu({
     try {
       await reject(fp);
       onHostToast?.(hostToast.declined(name));
+    } finally {
+      setActingId(null);
+    }
+  };
+
+  const handleKick = async (fp: string, name: string) => {
+    setActingId(fp);
+    try {
+      await reject(fp);
+      onHostToast?.(hostToast.removed(name));
     } finally {
       setActingId(null);
     }
@@ -343,6 +375,15 @@ export function ParticipantsMenu({
                     isHost && m.status === "pending"
                       ? () =>
                           void handleReject(
+                            m.device_fingerprint,
+                            m.display_name
+                          )
+                      : undefined
+                  }
+                  onKick={
+                    isHost && m.status === "approved"
+                      ? () =>
+                          void handleKick(
                             m.device_fingerprint,
                             m.display_name
                           )

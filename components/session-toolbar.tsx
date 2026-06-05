@@ -5,9 +5,10 @@ import { LogOut, QrCode } from "lucide-react";
 import { OnariamLogo } from "@/components/onariam-logo";
 import { ParticipantsMenu } from "@/components/participants-menu";
 import { SessionPairDrawer } from "@/components/session-pair-drawer";
+import { SessionProfileMenu } from "@/components/session-profile-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { RoomSession } from "@/lib/room-session";
-import { pageShell, toolbarControl, touchTarget } from "@/lib/ui";
+import { pageShell, touchTarget } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -52,25 +53,24 @@ export function SessionToolbar({
         >
           <OnariamLogo size="sm" href="/" compact className="shrink-0" />
 
-          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
+          <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
             <button
               type="button"
               onClick={() => onPairOpenChange(true)}
               className={cn(
                 touchTarget,
-                toolbarControl,
-                "relative size-10 sm:size-9",
-                phoneLinked && "border-foreground/20 text-foreground"
+                "relative inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-surface-elevated hover:text-foreground",
+                phoneLinked && "text-foreground"
               )}
               aria-label={
                 phoneLinked ? "Phone linked — show QR" : "Link phone — show QR"
               }
               aria-expanded={pairOpen}
             >
-              <QrCode className="size-4 shrink-0" aria-hidden />
+              <QrCode className="size-[1.125rem] shrink-0" aria-hidden />
               {phoneLinked && (
                 <span
-                  className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-action"
+                  className="absolute right-1 top-1 size-1.5 rounded-full bg-action"
                   aria-hidden
                 />
               )}
@@ -90,19 +90,7 @@ export function SessionToolbar({
 
             <ThemeToggle />
 
-            <button
-              type="button"
-              onClick={onLeave}
-              className={cn(
-                touchTarget,
-                toolbarControl,
-                "size-10 hover:bg-destructive/10 hover:text-destructive sm:size-auto sm:h-9 sm:gap-1.5 sm:px-3 sm:text-sm sm:font-medium"
-              )}
-              aria-label="Leave session"
-            >
-              <LogOut className="size-4 shrink-0" aria-hidden />
-              <span className="hidden sm:inline">Leave</span>
-            </button>
+            <SessionProfileMenu session={session} onLeave={onLeave} />
           </div>
         </div>
       </header>

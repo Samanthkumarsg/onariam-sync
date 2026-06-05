@@ -121,6 +121,7 @@ export const rewardToast = {
 export const fileTransferCopy = {
   attach: "Attach file",
   download: "Download",
+  downloaded: "Downloaded",
   ipfsCid: "IPFS",
 } as const;
 
@@ -144,4 +145,5 @@ export const hostToast = {
       : `${count} people waiting — open People to accept`,
   approved: (name: string) => `${name} joined the board`,
   declined: (name: string) => `Declined ${name}`,
+  removed: (name: string) => `${name} removed from session`,
 } as const;

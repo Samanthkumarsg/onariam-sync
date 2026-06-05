@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   Check,
   ClipboardCheck,
@@ -8,6 +10,7 @@ import {
   FileIcon,
   MessageSquare,
   Smartphone,
+  UserRound,
 } from "lucide-react";
 
 import { MemberTagPicker } from "@/components/member-tag-picker";
@@ -73,6 +76,8 @@ export function ClipboardBoardItemCard({
   const isFile = isFilePayload(item);
   const depth = isReply ? Math.max(replyDepth, 1) : 0;
   const compactReply = depth >= 2;
+  const [assignOpen, setAssignOpen] = useState(false);
+  const showAssignPanel = canAssign && (assignOpen || Boolean(assignee));
 
   return (
     <article
@@ -94,7 +99,9 @@ export function ClipboardBoardItemCard({
           : isReply
             ? `Reply from ${author.displayName}`
             : copied
-              ? `Pasted by ${author.displayName}, copied`
+              ? isFile
+                ? `File from ${author.displayName}, downloaded`
+                : `Pasted by ${author.displayName}, copied`
               : `Pasted by ${author.displayName}`
       }
     >
@@ -167,14 +174,16 @@ export function ClipboardBoardItemCard({
             )}
             aria-label={
               isFile
-                ? fileTransferCopy.download
+                ? copied
+                  ? "Download again"
+                  : fileTransferCopy.download
                 : copied
                   ? "Copy again"
                   : "Copy to clipboard"
             }
             onClick={onCopy}
           >
-            {copying ? (
+            {copying || copied ? (
               <Check className="size-3.5 shrink-0" aria-hidden />
             ) : isFile ? (
               <Download className="size-3.5 shrink-0" aria-hidden />
@@ -183,7 +192,9 @@ export function ClipboardBoardItemCard({
             )}
             <span className="sr-only">
               {isFile
-                ? fileTransferCopy.download
+                ? copied
+                  ? "Download again"
+                  : fileTransferCopy.download
                 : copied
                   ? "Copy again"
                   : "Copy to clipboard"}
@@ -226,7 +237,7 @@ export function ClipboardBoardItemCard({
             {threadCopy.replies(nestedReplyCount)}
           </span>
         )}
-        {assignee && !canAssign && (
+        {assignee && (
           <span className="inline-flex max-w-full items-center gap-0.5 truncate text-primary">
             <span aria-hidden>{assignee.avatar}</span>
             <span className="truncate">{assignee.displayName}</span>
@@ -248,12 +259,30 @@ export function ClipboardBoardItemCard({
                 minute: "2-digit",
               })}
         </time>
-        {copied && !isFile ? (
+        {copied ? (
           <span className="inline-flex items-center gap-0.5 text-accent-foreground">
             <ClipboardCheck className="size-2.5 shrink-0" aria-hidden />
-            Copied
+            {isFile ? fileTransferCopy.downloaded : "Copied"}
           </span>
         ) : null}
+        {canAssign && !isReply && (
+          <button
+            type="button"
+            onClick={() => setAssignOpen((open) => !open)}
+            className={cn(
+              btnGhost,
+              touchTarget,
+              "inline-flex items-center gap-1 px-1.5",
+              isReply ? "h-7 text-[10px]" : "h-8 px-2",
+              (assignOpen || assignee) && "bg-surface-elevated text-foreground"
+            )}
+            aria-expanded={showAssignPanel}
+            aria-label="Assign to teammate"
+          >
+            <UserRound className="size-3 shrink-0" aria-hidden />
+            {!isReply && "Assign"}
+          </button>
+        )}
         {onReply && (
           <button
             type="button"
@@ -273,14 +302,14 @@ export function ClipboardBoardItemCard({
         )}
       </div>
 
-      {canAssign && onAssigneeChange && (
+      {showAssignPanel && onAssigneeChange && (
         <MemberTagPicker
           members={members}
           currentDeviceFingerprint={currentDeviceFingerprint}
           value={assignee}
           onChange={(next) => onAssigneeChange(item.id, next)}
-          label=""
-          className="relative z-[1] min-w-0 space-y-0 [&>p:first-child]:hidden"
+          label="Assign to"
+          className="relative z-[1] min-w-0 space-y-1.5 px-1 pb-1"
         />
       )}
     </article>
