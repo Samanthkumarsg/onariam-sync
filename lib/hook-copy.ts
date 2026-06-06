@@ -122,6 +122,7 @@ export const fileTransferCopy = {
   attach: "Attach file",
   download: "Download",
   downloaded: "Downloaded",
+  downloadFailed: "Download failed — file may have expired. Try re-uploading.",
   ipfsCid: "IPFS",
 } as const;
 

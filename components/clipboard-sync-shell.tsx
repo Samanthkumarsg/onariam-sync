@@ -27,6 +27,7 @@ import {
 } from "@/lib/clipboard-inbox-storage";
 import {
   formatPhoneInviteClipboard,
+  fileTransferCopy,
   hostToast,
   rewardToast,
 } from "@/lib/hook-copy";
@@ -81,6 +82,7 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
   const [pairOpen, setPairOpen] = useState(false);
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [hostToastMsg, setHostToastMsg] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const [replyingToId, setReplyingToId] = useState<string | null>(null);
   const prevPendingCountRef = useRef(0);
 
@@ -259,10 +261,11 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
   const copyItem = async (item: ClipboardBoardItem) => {
     try {
       if (isFilePayload(item)) {
-        await downloadIpfsFile(item.cid, item.name);
+        await downloadIpfsFile(item.cid, item.name, item.mimeType);
       } else {
         await navigator.clipboard.writeText(item.text);
       }
+      setDownloadError(null);
       setCopiedId(item.id);
       persistItems(
         itemsRef.current.map((row) =>
@@ -271,8 +274,14 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
       );
       p2p.sendAck(item.id, true);
       setTimeout(() => setCopiedId(null), 1500);
-    } catch {
+    } catch (err) {
       p2p.sendAck(item.id, false);
+      if (isFilePayload(item)) {
+        const message =
+          err instanceof Error ? err.message : fileTransferCopy.downloadFailed;
+        setDownloadError(message);
+        setTimeout(() => setDownloadError(null), 4000);
+      }
     }
   };
 
@@ -327,6 +336,15 @@ export function ClipboardSyncShell({ session, onLeave }: Props) {
           setParticipantsOpen(true);
         }}
       />
+
+      {downloadError && (
+        <div
+          className="pointer-events-none fixed bottom-28 left-1/2 z-50 mx-auto flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center justify-center rounded-full border border-destructive/40 bg-destructive/10 px-4 py-2.5 text-sm font-medium text-destructive md:bottom-safe"
+          role="alert"
+        >
+          {downloadError}
+        </div>
+      )}
 
       {(autoCopiedId || quickPasted) && (
         <div
